@@ -24,7 +24,7 @@ public class StackController {
 		public void onStartMove();
 		
 		public void onMove (int moveAmount);
-		public void onEndMove(float totalDelta);
+		public void onEndMove(int velocity);
 	}
 	
 	public StackController (Context context, StackLayout stackLayout){
@@ -199,8 +199,9 @@ public class StackController {
 	//           mVelocityTracker = null;
 	//       }
 			 if (onMoveListener != null) {
-				 onMoveListener.onEndMove(lastMotionX-initialMotionX);
+				 onMoveListener.onEndMove(0);
 			 }
+			 
 		 }
 	}
 
