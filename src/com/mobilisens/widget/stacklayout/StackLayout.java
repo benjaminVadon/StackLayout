@@ -12,16 +12,18 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Interpolator;
 
 public class StackLayout extends ViewGroup implements OnMoveListener {
+	
+	private final boolean DEBUG = false;
+	
 	private static String TAG = "StackLayout";
 	private static final int NO_CHILD_TOUCHED = Integer.MAX_VALUE;
 	private static final boolean RIGHT = true;
 	private static final boolean LEFT = false;
+	private static final long MAX_ANIMATION_DURATION = 400;
 	private StackController stackController;
 	private int currentInterceptedTouchedView = NO_CHILD_TOUCHED;
 	private boolean lastDirection;
@@ -175,7 +177,7 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 	
 	@Override
 	public void onMove(int moveAmount) {
-    	Log.i(TAG, "onMove "+moveAmount);
+    	if(DEBUG)Log.i(TAG, "onMove "+moveAmount);
     	
     	int count = getChildCount();
     	if(count<1)
@@ -505,8 +507,8 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 		ObjectAnimator animator = ObjectAnimator.ofInt(lp, "left", lp.left-delta);
 		if(velocity!=0){
 	        velocity = Math.abs(velocity);
-	        long duration = 4 * Math.round(1000 * Math.abs(delta / velocity));
-			
+	        long duration = Math.round(1000 * Math.abs((float)delta / velocity));
+			duration = Math.min(duration, MAX_ANIMATION_DURATION);
 			animator.setDuration(duration);
 		}
 		animator.addUpdateListener(new AnimatorUpdateListener() {

@@ -3,14 +3,16 @@ package com.mobilisens.widget.stacklayout;
 import android.content.Context;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.View;
+import android.view.VelocityTracker;
+//import android.view.View;
 import android.view.ViewConfiguration;
 
 public class StackController {
-	private static String TAG = "StackController";
+	
 	private final boolean DEBUG = false;
+	
+	private static String TAG = "StackController";
 	private static final int INVALID_POINTER = -1;
-	private Context context;
 	private OnMoveListener onMoveListener;
 	private float initialMotionX;
 	private float currentMotionX;
@@ -19,6 +21,9 @@ public class StackController {
 	private int activePointerId;
 	private boolean isMoving;
 	private static float touchSlop;
+	private static int maximumVelocity;
+
+    private VelocityTracker velocityTracker;
 
 	public interface OnMoveListener{
 		public void onStartMove();
@@ -28,10 +33,11 @@ public class StackController {
 	}
 	
 	public StackController (Context context, StackLayout stackLayout){
-		this.context = context;
+//		this.context = context;
 		setOnMoveListener(stackLayout);
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         touchSlop = configuration.getScaledPagingTouchSlop();
+        maximumVelocity = configuration.getScaledMaximumFlingVelocity();
 	}
 
 	public void setOnMoveListener(OnMoveListener moveListener){
@@ -49,7 +55,7 @@ public class StackController {
 	
 	private boolean treatInterceptedAction(int action, MotionEvent event) {
 		if(actionIsFinished(action)){
-        	endMove(event);
+        	endMove(false);
 			return false;
 		}
 		if(isNotNewGesture(action)){
@@ -63,7 +69,15 @@ public class StackController {
 			treatInterceptedActionMove(event);
 			break;
 		}
+		addMovementForVelocity(event);
 		return isMoving;
+	}
+
+	private void addMovementForVelocity(MotionEvent event) {
+		if (velocityTracker == null) {
+			velocityTracker = VelocityTracker.obtain();
+		}
+		velocityTracker.addMovement(event);
 	}
 
 	private void treatInterceptedActionDown(MotionEvent event) {
@@ -95,6 +109,7 @@ public class StackController {
 
 	public boolean onTouchEvent(MotionEvent event) {
 		final int action = actionOfEvent(event);
+		addMovementForVelocity(event);
 		return treatAction(action, event);
 	}
 
@@ -185,23 +200,29 @@ public class StackController {
 
 	private boolean treatActionUp(MotionEvent event) {
 		if(DEBUG)Log.i(TAG, "treatActionUp");
-    	endMove(event);
+    	endMove(true);
     	return true;
 	}
 	
-	private void endMove(MotionEvent event) {
+	private void endMove(boolean useVelocity) {
 		 if (isMoving) {
 			 isMoving = false;
 
              activePointerId = INVALID_POINTER;
-//           if (mVelocityTracker != null) {
-	//           mVelocityTracker.recycle();
-	//           mVelocityTracker = null;
-	//       }
-			 if (onMoveListener != null) {
-				 onMoveListener.onEndMove(0);
+
+             int velocity = 0;
+             if(useVelocity){
+            	 final VelocityTracker velocityTracker = this.velocityTracker;
+                 velocityTracker.computeCurrentVelocity(1000, maximumVelocity);
+                 velocity = (int) velocityTracker.getXVelocity(activePointerId);
+             }
+             if (onMoveListener != null) {
+				 onMoveListener.onEndMove(velocity);
 			 }
-			 
+			if (velocityTracker != null) {
+				velocityTracker.recycle();
+				velocityTracker = null;
+			}
 		 }
 	}
 
@@ -229,15 +250,15 @@ public class StackController {
             final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
 //            lastMotionX = event.getX(newPointerIndex);
             activePointerId = event.getPointerId(newPointerIndex);
-//            if (velocityTracker != null) {
-//                velocityTracker.clear();
-//            }
+            if (velocityTracker != null) {
+                velocityTracker.clear();
+            }
         }
     }
     
 	private boolean treatActionCancel(MotionEvent event) {
 		if(DEBUG)Log.i(TAG, "treatActionCancel");
-    	endMove(event);
+    	endMove(false);
 		return true;
 	}
 	
