@@ -208,8 +208,6 @@ public class StackController {
 		 if (isMoving) {
 			 isMoving = false;
 
-             activePointerId = INVALID_POINTER;
-
              int velocity = 0;
              if(useVelocity){
             	 final VelocityTracker velocityTracker = this.velocityTracker;
@@ -219,6 +217,8 @@ public class StackController {
              if (onMoveListener != null) {
 				 onMoveListener.onEndMove(velocity);
 			 }
+
+            activePointerId = INVALID_POINTER;
 			if (velocityTracker != null) {
 				velocityTracker.recycle();
 				velocityTracker = null;
