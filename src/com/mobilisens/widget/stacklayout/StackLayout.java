@@ -393,10 +393,10 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 	}
 
 	
-	private void animViewLayout(int i, int delta, int velocity) {
+	private void animViewLayout(final int i, int delta, int velocity) {
 		final View view = getChildAt(i);
 		final LayoutParams lp = (LayoutParams) view.getLayoutParams();
-		ObjectAnimator animator = ObjectAnimator.ofInt(lp, "left", lp.left-delta);
+		final ObjectAnimator animator = ObjectAnimator.ofInt(lp, "left", lp.left-delta);
 		if(velocity!=0){
 	        velocity = Math.abs(velocity);
 	        long duration = Math.round(1000 * Math.abs((float)delta / velocity));
@@ -407,6 +407,18 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 			
 			@Override
 			public void onAnimationUpdate(ValueAnimator animation) {
+				//part for stoping animation if view is deleted during animation
+				int count = getChildCount();
+				if(i>count-1){
+					animator.cancel();
+					return;
+				}
+				View currentViewAtPosI = getChildAt(i);
+				if(currentViewAtPosI!= view){
+					animator.cancel();
+					return;
+				}
+				
 				updateViewLayout(view, lp);
 				
 			}
