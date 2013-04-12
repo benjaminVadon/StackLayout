@@ -23,8 +23,7 @@ import android.view.animation.TranslateAnimation;
 public class StackLayout extends ViewGroup implements OnMoveListener {
 	
 	private final boolean DEBUG = false;
-	
-	private static String TAG = "StackLayout";
+	private final String TAG = getClass().getSimpleName();
 
 	private static final int NO_CHILD_TOUCHED = Integer.MAX_VALUE;
 	private static final boolean RIGHT = true;
@@ -34,6 +33,8 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 	private int currentInterceptedTouchedView = NO_CHILD_TOUCHED;
 	private boolean lastDirection;
 
+	private boolean childAlreadyMeasured =false;
+
 	private static final LayoutAnimationController addChildAnimationController;
 	private static final LayoutAnimationController removeChildAnimationController;
 
@@ -41,17 +42,18 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
         AnimationSet set = new AnimationSet(true);
 
         Animation animation = new AlphaAnimation(0.0f, 1.0f);
-        animation.setDuration(50);
+        animation.setDuration(100);
         set.addAnimation(animation);
 
         animation = new TranslateAnimation(
             Animation.RELATIVE_TO_SELF, 1.0f,Animation.RELATIVE_TO_SELF, 0.0f,
             Animation.RELATIVE_TO_SELF, 0.0f,Animation.RELATIVE_TO_SELF, 0.0f
         );
-        animation.setDuration(200);
+        animation.setDuration(500);
         set.addAnimation(animation);
 
-         addChildAnimationController = new LayoutAnimationController(set, 0.5f);
+         addChildAnimationController = new LayoutAnimationController(set);
+         
          
          AnimationSet removeSet = new AnimationSet(true);
 
@@ -61,7 +63,7 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 
          removeSet.addAnimation(animation);
 
-         removeChildAnimationController = new LayoutAnimationController(removeSet, 0.5f);
+         removeChildAnimationController = new LayoutAnimationController(removeSet);
 	}
 	
 	public StackLayout(Context context) {
@@ -76,64 +78,61 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 
 	private void initStackLayout(Context context){
 		stackController = new StackController(context, this);
-		
-
-
-//        this.setLayoutAnimation(controller);
 	}
 	
 	@Override
 	public void addView(View child, int index, android.view.ViewGroup.LayoutParams params) {
+		childAlreadyMeasured=false;
 		int count = getChildCount();
-		if(index>=0 && index<count){
-			for(int i = index; i<count; i++){
+		if (index >= 0 && index < count) {
+			for (int i = index; i < count; i++) {
 				View deletedView = getChildAt(i);
 				deletedView.setAnimation(removeChildAnimationController.getAnimationForView(deletedView));
-//				removeView(deletedView);
 			}
-			int nbViewToRemove = count-index;
+			int nbViewToRemove = count - index;
 			removeViews(index, nbViewToRemove);
-			count -= nbViewToRemove;  
+			count -= nbViewToRemove;
 		}
-		LayoutParams lp  = generateLayoutParams(params);
-		if(count>0){
-			View viewUnderAdded = getChildAt(count-1);
+		LayoutParams lp = generateLayoutParams(params);
+		if (count > 0) {
+			View viewUnderAdded = getChildAt(count - 1);
 			lp.setUnderView(viewUnderAdded);
 			LayoutParams viewUnderAddedLp = (LayoutParams) viewUnderAdded.getLayoutParams();
-			if(!viewUnderAddedLp.fixed){
+			if (!viewUnderAddedLp.fixed) {
 				int leftLimit = 0;
 				int rightLimit = 0;
-				if(viewUnderAddedLp.underView!=null){
+				if (viewUnderAddedLp.underView != null) {
 					View underUnderView = viewUnderAddedLp.underView;
 					LayoutParams underUnderViewLp = (LayoutParams) underUnderView.getLayoutParams();
-					rightLimit = underUnderViewLp.left+underUnderView.getMeasuredWidth();
+					rightLimit = underUnderViewLp.left + underUnderView.getMeasuredWidth();
 					leftLimit = underUnderViewLp.left;
 				}
 				int moveAmount = 0;
-				if(viewUnderAddedLp.left!=leftLimit && viewUnderAddedLp.left!=rightLimit){
+				if (viewUnderAddedLp.left != leftLimit
+				&& viewUnderAddedLp.left != rightLimit) {
 					moveAmount -= leftLimit - viewUnderAddedLp.left;
-				}else if(rightLimit != 0 && viewUnderAddedLp.left == rightLimit){
-					moveAmount = viewUnderAdded.getMeasuredWidth()*3/5;
+				} else if (rightLimit != 0
+						&& viewUnderAddedLp.left == rightLimit) {
+					moveAmount = viewUnderAdded.getMeasuredWidth() * 3 / 5;
 				}
-				
-				if(moveAmount!=0){
-					for (int viewIndex = count-1; viewIndex >=0 ; viewIndex--) {
+
+				if (moveAmount != 0) {
+					for (int viewIndex = count - 1; viewIndex >= 0; viewIndex--) {
 						View viewMoved = getChildAt(viewIndex);
 						LayoutParams viewMovedLp = (LayoutParams) viewMoved.getLayoutParams();
-						if(!viewMovedLp.fixed){
-							if(viewMovedLp.left - moveAmount<0)
-								moveAmount = viewMovedLp.left - moveAmount; 
+						if (!viewMovedLp.fixed) {
+							if (viewMovedLp.left - moveAmount < 0)
+								moveAmount = viewMovedLp.left - moveAmount;
 							animViewLayout(viewIndex, moveAmount, 0);
-							if(!lp.isPosSet())
-								lp.left = viewMovedLp.left + viewMoved.getMeasuredWidth() - moveAmount;
+							if (!lp.isPosSet())
+								lp.left = viewMovedLp.left
+										+ viewMoved.getMeasuredWidth()
+										- moveAmount;
 						}
-			    	}
+					}
 				}
 			}
-
 		}
-
-
 		super.addView(child, index, lp);
 		child.setAnimation(addChildAnimationController.getAnimationForView(child));
 	}
@@ -146,6 +145,10 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
         int maxWidth = getSuggestedMinimumWidth();
 
         setMeasuredDimension(getDefaultSize(maxWidth, widthMeasureSpec), getDefaultSize(maxHeight, heightMeasureSpec));
+        
+        if(childAlreadyMeasured)
+        	return;
+        
         int underRight = 0;
         for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
@@ -180,6 +183,7 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
             }
             underRight = lp.left+ child.getMeasuredWidth();
         }
+        childAlreadyMeasured=true;
     }
 	
 	@Override
@@ -207,7 +211,7 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 		if (getChildCount()>0) {
 			boolean result = stackController.onInterceptTouchEvent(event);
 			currentInterceptedTouchedView = getCurrentInterceptedTouchedView(event);
-			if (DEBUG)Log.i(TAG,"currentInterceptedTouchedView "+currentInterceptedTouchedView );
+			if(DEBUG)Log.i(TAG,"currentInterceptedTouchedView "+currentInterceptedTouchedView );
 			return result;
 		}
 		return false;

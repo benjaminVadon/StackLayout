@@ -9,9 +9,9 @@ import android.view.ViewConfiguration;
 
 public class StackController {
 	
+	private final String TAG = getClass().getSimpleName();
 	private final boolean DEBUG = false;
 	
-	private static String TAG = "StackController";
 	private static final int INVALID_POINTER = -1;
 	private OnMoveListener onMoveListener;
 	private float initialMotionX;
@@ -33,7 +33,6 @@ public class StackController {
 	}
 	
 	public StackController (Context context, StackLayout stackLayout){
-//		this.context = context;
 		setOnMoveListener(stackLayout);
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         touchSlop = configuration.getScaledPagingTouchSlop();
@@ -185,15 +184,14 @@ public class StackController {
 		currentMotionX = event.getX(pointerIndex);
         final float deltaX = lastMotionX - currentMotionX;
         int minDep = 1;
-        if(Math.abs(deltaX)>minDep){//TODO not work well hack for gutter touch , but must use android viewpager method for gutter touch
-
+        if(Math.abs(deltaX)>minDep){
 	        int moveAmount = (int) deltaX;
 	        lastMotionX = currentMotionX;
-	
+
 			 if (onMoveListener != null && moveAmount!=0) {
 				 onMoveListener.onMove(moveAmount);
 			 }
-			 
+
 			lastMotionX += deltaX - moveAmount;
         }
 	}
@@ -205,25 +203,25 @@ public class StackController {
 	}
 	
 	private void endMove(boolean useVelocity) {
-		 if (isMoving) {
-			 isMoving = false;
+		if (isMoving) {
+			isMoving = false;
 
-             int velocity = 0;
-             if(useVelocity){
-            	 final VelocityTracker velocityTracker = this.velocityTracker;
-                 velocityTracker.computeCurrentVelocity(1000, maximumVelocity);
-                 velocity = (int) velocityTracker.getXVelocity(activePointerId);
-             }
-             if (onMoveListener != null) {
-				 onMoveListener.onEndMove(velocity);
-			 }
+			int velocity = 0;
+			if (useVelocity) {
+				final VelocityTracker velocityTracker = this.velocityTracker;
+				velocityTracker.computeCurrentVelocity(1000, maximumVelocity);
+				velocity = (int) velocityTracker.getXVelocity(activePointerId);
+			}
+			if (onMoveListener != null) {
+				onMoveListener.onEndMove(velocity);
+			}
 
-            activePointerId = INVALID_POINTER;
+			activePointerId = INVALID_POINTER;
 			if (velocityTracker != null) {
 				velocityTracker.recycle();
 				velocityTracker = null;
 			}
-		 }
+		}
 	}
 
 	private boolean treatActionPointerDown(MotionEvent event) {
