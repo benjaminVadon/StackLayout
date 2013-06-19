@@ -7,7 +7,7 @@ import android.view.VelocityTracker;
 //import android.view.View;
 import android.view.ViewConfiguration;
 
-public class StackController {
+public class TouchController {
 	
 	private final String TAG = getClass().getSimpleName();
 	private final boolean DEBUG = false;
@@ -24,16 +24,9 @@ public class StackController {
 	private static int maximumVelocity;
 
     private VelocityTracker velocityTracker;
-
-	public interface OnMoveListener{
-		public void onStartMove();
-		
-		public void onMove (int moveAmount);
-		public void onEndMove(int velocity);
-	}
 	
-	public StackController (Context context, StackLayout stackLayout){
-		setOnMoveListener(stackLayout);
+	public TouchController (Context context, OnMoveListener moveListener){
+		setOnMoveListener(moveListener);
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         touchSlop = configuration.getScaledPagingTouchSlop();
         maximumVelocity = configuration.getScaledMaximumFlingVelocity();
@@ -61,12 +54,12 @@ public class StackController {
 			return true;
 		}
 		switch (action) {
-		case MotionEvent.ACTION_DOWN:
-			treatInterceptedActionDown(event);
-			break;
-		case MotionEvent.ACTION_MOVE:
-			treatInterceptedActionMove(event);
-			break;
+			case MotionEvent.ACTION_DOWN:
+				treatInterceptedActionDown(event);
+				break;
+			case MotionEvent.ACTION_MOVE:
+				treatInterceptedActionMove(event);
+				break;
 		}
 		addMovementForVelocity(event);
 		return isMoving;
@@ -84,6 +77,7 @@ public class StackController {
 	}
 	
 	private void treatInterceptedActionMove(MotionEvent event) {
+    	if(DEBUG)Log.i(TAG, "treatInterceptedActionMove");
 		if (activePointerId == INVALID_POINTER) {
             return;
         }
@@ -171,6 +165,7 @@ public class StackController {
 	}
 
 	private void startMove() {
+    	if(DEBUG)Log.i(TAG, "startMove");
     	isMoving = true;
     	lastMotionX = initialMotionX + (currentMotionX - initialMotionX > 0 ?  touchSlop :-touchSlop);
 
@@ -259,9 +254,9 @@ public class StackController {
     	endMove(false);
 		return true;
 	}
-	
-	public int getCurrentPointerIndex(MotionEvent event){
-		final int pointerIndex = event.findPointerIndex(activePointerId);
-		return pointerIndex;
+
+	public int getActivePointerId() {
+		return activePointerId;
 	}
+
 }

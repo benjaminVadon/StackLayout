@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="StackLayout_LayoutParams">
+    <declare-styleable name="StackLayoutParams">
         <attr name="best_width_from_parent" format="boolean"/>
         <attr name="fixed" format="boolean"/>
+        <attr name="anchor_for_init" format="integer"/>
     </declare-styleable>
 
 </resources>

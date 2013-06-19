@@ -1,39 +1,39 @@
 package com.mobilisens.widget.stacklayout;
 
-import com.mobilisens.widget.stacklayout.R;
-import com.mobilisens.widget.stacklayout.StackController.OnMoveListener;
+import java.util.ArrayList;
 
-import com.nineoldandroids.animation.*;
-import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
+import com.mobilisens.widget.stacklayout.R;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.LayoutAnimationController;
 import android.view.animation.TranslateAnimation;
 
-public class StackLayout extends ViewGroup implements OnMoveListener {
+public class StackLayout extends ViewGroup{
 	
 	private final boolean DEBUG = false;
 	private final String TAG = getClass().getSimpleName();
 
-	private static final int NO_CHILD_TOUCHED = Integer.MAX_VALUE;
-	private static final boolean RIGHT = true;
-	private static final boolean LEFT = false;
-	private static final long MAX_ANIMATION_DURATION = 400;
-	private StackController stackController;
-	private int currentInterceptedTouchedView = NO_CHILD_TOUCHED;
-	private boolean lastDirection;
-
+	private TouchController touchController;
+	private MoveController moveController;
 	private boolean childAlreadyMeasured =false;
+	private int deviceWidth;
+	private int deviveHeight;
+	
 
 	private static final LayoutAnimationController addChildAnimationController;
 	private static final LayoutAnimationController removeChildAnimationController;
@@ -52,7 +52,7 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
         animation.setDuration(500);
         set.addAnimation(animation);
 
-         addChildAnimationController = new LayoutAnimationController(set);
+        addChildAnimationController = new LayoutAnimationController(set);
          
          
          AnimationSet removeSet = new AnimationSet(true);
@@ -77,13 +77,31 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 	}
 
 	private void initStackLayout(Context context){
-		stackController = new StackController(context, this);
+		moveController = new MoveController(this);
+		touchController = new TouchController(context, moveController);
+		this.setSaveEnabled(true);
+		int id = getId();
+		if(id==View.NO_ID){
+			setId(R.id.stackLayout);
+		}
+		WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+		Display display = wm.getDefaultDisplay();
+		deviceWidth = display.getWidth(); 
+		deviveHeight = display.getHeight();
+
+
+        mShadow = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.photo_shadow);
+        mSrc = new Rect(0, 0, mShadow.getWidth(), mShadow.getHeight());
+//        shadowRects = new ArrayList<Rect>(3);
 	}
 	
 	@Override
 	public void addView(View child, int index, android.view.ViewGroup.LayoutParams params) {
 		childAlreadyMeasured=false;
 		int count = getChildCount();
+		if(index==-1){
+			index = count;
+		}
 		if (index >= 0 && index < count) {
 			for (int i = index; i < count; i++) {
 				View deletedView = getChildAt(i);
@@ -93,17 +111,17 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 			removeViews(index, nbViewToRemove);
 			count -= nbViewToRemove;
 		}
-		LayoutParams lp = generateLayoutParams(params);
+		StackLayoutParams lp = generateLayoutParams(params);
 		if (count > 0) {
 			View viewUnderAdded = getChildAt(count - 1);
 			lp.setUnderView(viewUnderAdded);
-			LayoutParams viewUnderAddedLp = (LayoutParams) viewUnderAdded.getLayoutParams();
+			StackLayoutParams viewUnderAddedLp = (StackLayoutParams) viewUnderAdded.getLayoutParams();
 			if (!viewUnderAddedLp.fixed) {
 				int leftLimit = 0;
 				int rightLimit = 0;
 				if (viewUnderAddedLp.underView != null) {
 					View underUnderView = viewUnderAddedLp.underView;
-					LayoutParams underUnderViewLp = (LayoutParams) underUnderView.getLayoutParams();
+					StackLayoutParams underUnderViewLp = (StackLayoutParams) underUnderView.getLayoutParams();
 					rightLimit = underUnderViewLp.left + underUnderView.getMeasuredWidth();
 					leftLimit = underUnderViewLp.left;
 				}
@@ -119,11 +137,11 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 				if (moveAmount != 0) {
 					for (int viewIndex = count - 1; viewIndex >= 0; viewIndex--) {
 						View viewMoved = getChildAt(viewIndex);
-						LayoutParams viewMovedLp = (LayoutParams) viewMoved.getLayoutParams();
+						StackLayoutParams viewMovedLp = (StackLayoutParams) viewMoved.getLayoutParams();
 						if (!viewMovedLp.fixed) {
 							if (viewMovedLp.left - moveAmount < 0)
 								moveAmount = viewMovedLp.left - moveAmount;
-							animViewLayout(viewIndex, moveAmount, 0);
+							moveController.animViewLayout(viewIndex, moveAmount, 0);
 							if (!lp.isPosSet())
 								lp.left = viewMovedLp.left
 										+ viewMoved.getMeasuredWidth()
@@ -132,11 +150,99 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 					}
 				}
 			}
+			if(lp.anchorForInit!=-1){
+				lp.left = lp.anchorForInit;
+			}
 		}
+
+		
 		super.addView(child, index, lp);
-		child.setAnimation(addChildAnimationController.getAnimationForView(child));
+		
+		if(count!=0){
+			child.setAnimation(addChildAnimationController.getAnimationForView(child));
+		}
+		if(!child.hasOnClickListeners()){
+			child.setOnTouchListener(new OnTouchListener() {
+				
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					// TODO Auto-generated method stub
+					return true;
+				}
+			});
+		}
 	}
 
+//	@Override
+//	protected void dispatchDraw(Canvas canvas) {
+//		Log.i(TAG, "dispatchDraw");
+//		super.dispatchDraw(canvas);
+//		drawShadowForAllChild(canvas);
+//	}
+	
+//	@Override
+//	public void draw(Canvas canvas) {
+//		Log.i(TAG, "draw");
+//		super.draw(canvas);
+//	}
+
+    private Bitmap mShadow;
+    private Rect mSrc;
+    private final Rect mDst = new Rect();
+	private ArrayList<Integer> shadowPosList = new ArrayList<Integer>();
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        super.dispatchDraw(canvas);
+        drawAllShadows(canvas);
+    }
+//
+//	private void removeAllShadows() {
+//		if(!shadowPosList.isEmpty()){
+//			int shadowWidth = getShadowWidth();
+//			int top = getTop();
+//			int bottom = getBottom();
+//			for(int left: shadowPosList){
+//				Rect dirty = new Rect(left-shadowWidth, top, left, bottom);
+//				invalidate(dirty);
+//			}
+//		}
+//	}
+
+    private void drawAllShadows(Canvas canvas) {
+        final int count = getChildCount();
+        for (int i = count-1; i >= 0; i--) {
+            final View child = getChildAt(i);
+            
+            final int left = (int)child.getX();
+            if(DEBUG)Log.i(TAG, "draw,\tpos:"+left+"\t"+System.currentTimeMillis());
+            mDst.set(left - mShadow.getWidth(), 0, left, getHeight());
+
+            canvas.drawBitmap(mShadow, mSrc, mDst, null);
+            shadowPosList.add(left);
+        }
+	}
+    
+	public int getShadowWidth(){
+    	return mShadow.getWidth();
+    }
+//	private void drawShadowForAllChild(Canvas canvas){
+//		int count = getChildCount();
+//		for (int i = 0; i < count; i++) {
+//			View child = getChildAt(i);
+//			drawShadow(canvas, child);
+//		}
+//	}
+//	
+//	private void drawShadow(Canvas canvas, View child) {
+//		int childLeftPos = child.getLeft();
+//		if(childLeftPos>getLeft()){
+//			int shadowWidth = 30;
+//			shadowDrawable.setBounds(childLeftPos-shadowWidth, 0, childLeftPos, getHeight());
+//			shadowDrawable.draw(canvas);
+//		}
+//	}
+
+    
 	@Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int count = getChildCount();
@@ -145,23 +251,21 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
         int maxWidth = getSuggestedMinimumWidth();
 
         setMeasuredDimension(getDefaultSize(maxWidth, widthMeasureSpec), getDefaultSize(maxHeight, heightMeasureSpec));
-        
+
         if(childAlreadyMeasured)
         	return;
         
         int underRight = 0;
         for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
-
-            final LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            final StackLayoutParams lp = (StackLayoutParams) child.getLayoutParams();
             int childWidthMeasureSpec;
             int childHeightMeasureSpec;
             
-            if (lp.width == LayoutParams.MATCH_PARENT) {
+            if (lp.width == StackLayoutParams.MATCH_PARENT) {
             	int childWidth = getMeasuredWidth();
             	if(lp.bestWidthFromParent){
-            		int height = getMeasuredHeight();
-            		childWidth = (childWidth>height)?height:childWidth;
+            		childWidth = (deviceWidth<deviveHeight)?deviceWidth:deviveHeight;
             		childWidth = (int) ((childWidth * 2.) /3.);
             	}
         		childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidth, MeasureSpec.EXACTLY);
@@ -183,7 +287,6 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
             }
             underRight = lp.left+ child.getMeasuredWidth();
         }
-        childAlreadyMeasured=true;
     }
 	
 	@Override
@@ -192,7 +295,7 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 		for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
-                final LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                final StackLayoutParams lp = (StackLayoutParams) child.getLayoutParams();
 
                 final int width = child.getMeasuredWidth();
                 final int height = child.getMeasuredHeight();
@@ -208,269 +311,73 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 	
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
+    	if(DEBUG)Log.i(TAG, "onInterceptTouchEvent");
 		if (getChildCount()>0) {
-			boolean result = stackController.onInterceptTouchEvent(event);
-			currentInterceptedTouchedView = getCurrentInterceptedTouchedView(event);
-			if(DEBUG)Log.i(TAG,"currentInterceptedTouchedView "+currentInterceptedTouchedView );
+			boolean result = touchController.onInterceptTouchEvent(event);
+			moveController.setCurrentInterceptedTouchedView(event);
 			return result;
 		}
 		return false;
 	}
 
-	private int getCurrentInterceptedTouchedView(MotionEvent event) {
-		final int childrenCount = getChildCount();
-		if (childrenCount != 0) {
-			int actionIndex = stackController.getCurrentPointerIndex(event);
-			final int x = (int) event.getX(actionIndex);
-			final int y = (int) event.getY(actionIndex);
-
-			for (int i = childrenCount - 1; i >= 0; i--) {
-				final View child = getChildAt(i);
-				if (isTransformedTouchPointInView(x, y, child)) {
-					return i;
-				}
-			}
-		}
-		return NO_CHILD_TOUCHED;
-	}
-	
-	
-	private boolean isTransformedTouchPointInView(int x, int y, View child) {
-        final Rect frame = new Rect();
-        child.getHitRect(frame);
-        return frame.contains(x, y);
-	}
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+    	if(DEBUG)Log.i(TAG, "onTouchEvent");
 		if (getChildCount()>0) {
-			return stackController.onTouchEvent(event);
+			return touchController.onTouchEvent(event);
 		}
 		return false;
-	}
-
-	//OnMoveListener part
-	@Override
-	public void onStartMove() {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public void onMove(int moveAmount) {
-    	if(DEBUG)Log.i(TAG, "onMove "+moveAmount);
-    	
-    	int count = getChildCount();
-    	if(count<1)
-    		return;
-    	
-    	int upperChild = count -1;
-    	if(isMovingToRight(moveAmount)){
-    		lastDirection = RIGHT;
-    		int viewReferenceIndex = upperChild;
-    		if(currentInterceptedTouchedView!=NO_CHILD_TOUCHED){
-    			viewReferenceIndex = currentInterceptedTouchedView;
-    		}
-    		moveViewAndUpperViews(viewReferenceIndex, moveAmount);
-			moveUnderViewsToRight(viewReferenceIndex);
-    	}else{//moveLeft
-    		lastDirection = LEFT;
-    		for (int viewIndex = 0; viewIndex < count; viewIndex++) {
-    			moveViewAtIndexToLeft(viewIndex, upperChild, moveAmount);
-	    	}
-    	}
-	}
-
-	private void moveViewAndUpperViews(int viewReferenceIndex, int moveAmount) {
-		int count = getChildCount();
-		for(int viewIndex=viewReferenceIndex; viewIndex<count; viewIndex++){
-			moveViewAtIndexToRight(viewIndex, moveAmount);
-		}
-	}
-	
-	private void moveViewAtIndexToRight(int viewIndex, int moveAmount) {
-		View viewMoved = getChildAt(viewIndex);
-		LayoutParams viewMovedLp = (LayoutParams) viewMoved.getLayoutParams();
-		if(!viewMovedLp.fixed){
-			viewMovedLp.left -=moveAmount;
-			updateViewLayout(viewMoved, viewMovedLp);
-		}
-	}
-	
-	private void moveUnderViewsToRight(int touchedChildViewIndex) {
-		View currentView = getChildAt(touchedChildViewIndex);
-		LayoutParams currentLp = (LayoutParams) currentView.getLayoutParams();
-		if(currentLp.fixed)
-			return;
-		
-		for (int i = touchedChildViewIndex-1; i>=0; i--){
-			View underView = getChildAt(i);
-			LayoutParams underViewLp = (LayoutParams) underView.getLayoutParams();
-			if(underViewLp.fixed)
-				break;
-			
-			int underViewWidth = underView.getMeasuredWidth();
-			if(currentLp.left>=underViewLp.left+underViewWidth){
-				int newUnderLeftPos = currentLp.left - underViewWidth;
-				underViewLp.left = newUnderLeftPos;
-				updateViewLayout(underView, underViewLp);
-			}
-			currentLp = underViewLp;
-		}
-			
-	}
-
-	private boolean moveViewAtIndexToLeft(int viewIndex, int upperChild, int moveAmount) {
-		View viewMoved = getChildAt(viewIndex);
-		LayoutParams viewMovedLp = (LayoutParams) viewMoved.getLayoutParams();
-		if(!viewMovedLp.fixed){
-			viewMovedLp.left -=moveAmount;
-			if(viewMovedLp.left<0 && viewIndex != upperChild)
-				viewMovedLp.left=0;
-			updateViewLayout(viewMoved, viewMovedLp);
-			return true;
-		}
-		return false;
-	}
-	
-	private boolean isMovingToRight(int moveAmount) {
-		if(moveAmount<0)
-			return true;
-		else
-			return false;
-	}
-
-	@Override
-	public void onEndMove(int velocity) {
-		int tooMuchRightDelta = 0;
-		int tooMuchLeftDelta = 0;
-		int notEnoughtRightDelta = 0;
-		int notEnoughtLeftDelta = 0;
-		int nbChild = getChildCount();
-		for (int i = 0; i < nbChild; i++) {
-			View referenceMoveView = getChildAt(i);
-			LayoutParams referenceMoveViewLp = (LayoutParams) referenceMoveView.getLayoutParams();
-			
-			int underLeft = getLeft();
-			int underRight = underLeft;
-			if(referenceMoveViewLp.underView!=null){
-				View underReferenceMoveView = referenceMoveViewLp.underView;
-				LayoutParams underReferenceMoveLp = (LayoutParams) underReferenceMoveView.getLayoutParams();
-
-				underRight = underReferenceMoveLp.left + underReferenceMoveView.getMeasuredWidth();
-				underLeft = underReferenceMoveLp.left;
-			}
-
-			if(referenceMoveViewLp.left > underRight && tooMuchRightDelta==0){
-				tooMuchRightDelta += referenceMoveViewLp.left - underRight;
-			}
-			if(tooMuchRightDelta!=0 && tooMuchLeftDelta==0){
-				animViewLayout(i,tooMuchRightDelta, velocity);
-			}
-			if(referenceMoveViewLp.left < 0 && tooMuchLeftDelta==0){
-				tooMuchLeftDelta += referenceMoveViewLp.left ;
-			}
-			if(tooMuchLeftDelta!=0 && tooMuchRightDelta==0){
-				animViewLayout(i,tooMuchLeftDelta, velocity);
-			}
-			
-			
-			if(tooMuchLeftDelta==0  && tooMuchRightDelta==0 ){
-				if(lastDirection==RIGHT && notEnoughtRightDelta==0 && referenceMoveViewLp.left != underLeft && referenceMoveViewLp.left < underRight){
-					notEnoughtRightDelta += referenceMoveViewLp.left - underRight;
-				}
-				if(notEnoughtRightDelta!=0 && notEnoughtLeftDelta==0){
-					animViewLayout(i,notEnoughtRightDelta, velocity);
-				}
-				if(lastDirection==LEFT && notEnoughtLeftDelta==0
-//							&& referenceMoveViewLp.left != underLeft 
-						&& referenceMoveViewLp.left > underLeft){
-					notEnoughtLeftDelta += referenceMoveViewLp.left - underLeft;
-				}
-				if(notEnoughtLeftDelta!=0 && notEnoughtRightDelta==0){
-					animViewLayout(i,notEnoughtLeftDelta, velocity);
-				}
-			}
-			
-		}
-		currentInterceptedTouchedView = NO_CHILD_TOUCHED;
-	}
-
-	
-	private void animViewLayout(final int i, int delta, int velocity) {
-		final View view = getChildAt(i);
-		final LayoutParams lp = (LayoutParams) view.getLayoutParams();
-		final ObjectAnimator animator = ObjectAnimator.ofInt(lp, "left", lp.left-delta);
-		if(velocity!=0){
-	        velocity = Math.abs(velocity);
-	        long duration = Math.round(1000 * Math.abs((float)delta / velocity));
-			duration = Math.min(duration, MAX_ANIMATION_DURATION);
-			animator.setDuration(duration);
-		}
-		animator.addUpdateListener(new AnimatorUpdateListener() {
-			
-			@Override
-			public void onAnimationUpdate(ValueAnimator animation) {
-				//part for stoping animation if view is deleted during animation
-				int count = getChildCount();
-				if(i>count-1){
-					animator.cancel();
-					return;
-				}
-				View currentViewAtPosI = getChildAt(i);
-				if(currentViewAtPosI!= view){
-					animator.cancel();
-					return;
-				}
-				
-				updateViewLayout(view, lp);
-				
-			}
-		});
-		animator.start();
 	}
 
 	//Layout Params part
 	@Override
 	protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
-		return p instanceof LayoutParams;
+		return p instanceof StackLayoutParams;
 	}
 	
 	@Override
-	protected LayoutParams generateDefaultLayoutParams() {
-		return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+	protected StackLayoutParams generateDefaultLayoutParams() {
+		return new StackLayoutParams(StackLayoutParams.MATCH_PARENT, StackLayoutParams.MATCH_PARENT);
 	}
 	
-	public LayoutParams generateLayoutParams(boolean fixed, boolean bestWidthFromParent) {
-		LayoutParams params = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+	public StackLayoutParams generateLayoutParams(boolean fixed, boolean bestWidthFromParent) {
+		StackLayoutParams params = new StackLayoutParams(StackLayoutParams.MATCH_PARENT, StackLayoutParams.MATCH_PARENT);
 		params.bestWidthFromParent = bestWidthFromParent;
 		params.fixed = fixed;
 		return params;
 	}
 	
-	@Override
-	public LayoutParams generateLayoutParams(AttributeSet attrs) {
-		return new LayoutParams(getContext(), attrs);
+	public StackLayoutParams generateLayoutParams(boolean fixed, boolean bestWidthFromParent, int anchorForInit) {
+		StackLayoutParams params = generateLayoutParams(fixed, bestWidthFromParent);
+		params.anchorForInit = anchorForInit;
+		return params;
 	}
 	
 	@Override
-	protected LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
+	public StackLayoutParams generateLayoutParams(AttributeSet attrs) {
+		return new StackLayoutParams(getContext(), attrs);
+	}
+	
+	@Override
+	protected StackLayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
 		if(p==null)
 			return generateDefaultLayoutParams();
 		if (checkLayoutParams(p))
-			return (LayoutParams) p;
+			return (StackLayoutParams) p;
 		else
-			return new LayoutParams(p.width, p.height);
+			return new StackLayoutParams(p.width, p.height);
 	}
 
-	public static class LayoutParams extends ViewGroup.LayoutParams {
+	public static class StackLayoutParams extends ViewGroup.LayoutParams {
 		private static final int POS_NOT_SET = Integer.MIN_VALUE;
 		int left = POS_NOT_SET;
-		private View underView = null;
+		View underView = null;
 		boolean bestWidthFromParent = false;
 		boolean fixed = false;
+		private int anchorForInit = -1;
 		
-		public LayoutParams(int w, int h) {
+		public StackLayoutParams(int w, int h) {
 			super(w, h);
 			this.left = POS_NOT_SET;
 		}
@@ -479,12 +386,13 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 			this.underView = underView;
 		}
 
-		public LayoutParams(Context context, AttributeSet attrs) {
+		public StackLayoutParams(Context context, AttributeSet attrs) {
 			super(context, attrs);
-			TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.StackLayout_LayoutParams);
+			TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.StackLayoutParams);
 			try {
-				bestWidthFromParent = a.getBoolean(R.styleable.StackLayout_LayoutParams_best_width_from_parent, false);
-				fixed = a.getBoolean(R.styleable.StackLayout_LayoutParams_fixed, false);
+				bestWidthFromParent = a.getBoolean(R.styleable.StackLayoutParams_best_width_from_parent, false);
+				fixed = a.getBoolean(R.styleable.StackLayoutParams_fixed, false);
+				anchorForInit = a.getInteger(R.styleable.StackLayoutParams_anchor_for_init, -1);
 			} finally {
 				a.recycle();
 			}
@@ -502,4 +410,9 @@ public class StackLayout extends ViewGroup implements OnMoveListener {
 			return this.left;
 		}
 	}
+
+	public int getActivePointerId() {
+		return touchController.getActivePointerId();
+	}
+	
 }
