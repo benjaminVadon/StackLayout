@@ -311,10 +311,12 @@ public class StackLayout extends ViewGroup{
 	
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
-    	if(DEBUG)Log.i(TAG, "onInterceptTouchEvent");
+    	if(DEBUG)Log.i(TAG, "onInterceptTouchEvent "+event.toString());
 		if (getChildCount()>0) {
 			boolean result = touchController.onInterceptTouchEvent(event);
-			moveController.setCurrentInterceptedTouchedView(event);
+			if(result){
+				moveController.setCurrentInterceptedTouchedView(event);
+			}
 			return result;
 		}
 		return false;

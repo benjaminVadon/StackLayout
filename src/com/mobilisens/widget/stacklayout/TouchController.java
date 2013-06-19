@@ -60,6 +60,9 @@ public class TouchController {
 			case MotionEvent.ACTION_MOVE:
 				treatInterceptedActionMove(event);
 				break;
+			case MotionEvent.ACTION_POINTER_UP:
+		    	onSecondaryPointerUp(event);
+				break;
 		}
 		addMovementForVelocity(event);
 		return isMoving;
@@ -235,6 +238,7 @@ public class TouchController {
     	return true;
 	}
     private void onSecondaryPointerUp(MotionEvent event) {
+		if(DEBUG)Log.i(TAG, "onSecondaryPointerUp");
         final int pointerIndex = event.getActionIndex();
         final int pointerId = event.getPointerId(pointerIndex);
         if (pointerId == activePointerId) {
