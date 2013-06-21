@@ -4,6 +4,7 @@ import android.graphics.Rect;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout.LayoutParams;
 
 import com.mobilisens.widget.stacklayout.StackLayout.StackLayoutParams;
 import com.nineoldandroids.animation.Animator;
@@ -26,6 +27,7 @@ public class MoveController implements OnMoveListener {
 	private boolean lastDirection;
 	
 	private StackLayout layoutHolder;
+	private boolean newMode = true;
 	
 	public MoveController (StackLayout layoutHolder){
 		this.layoutHolder = layoutHolder;
@@ -41,26 +43,51 @@ public class MoveController implements OnMoveListener {
 	@Override
 	public void onMove(int moveAmount) {
     	if(DEBUG)Log.i(TAG, "onMove "+moveAmount);
+
     	
-    	int count = layoutHolder.getChildCount();
-    	if(count<1)
-    		return;
-    	
-    	int upperChild = count -1;
-    	if(isMovingToRight(moveAmount)){
-    		lastDirection = RIGHT;
-    		int viewReferenceIndex = upperChild;
-    		if(currentInterceptedTouchedView!=NO_CHILD_TOUCHED){
-    			viewReferenceIndex = currentInterceptedTouchedView;
-    		}
-    		moveViewAndUpperViews(viewReferenceIndex, moveAmount);
-			moveUnderViewsToRight(viewReferenceIndex);
-    	}else{//moveLeft
-    		lastDirection = LEFT;
-    		for (int viewIndex = 0; viewIndex < count; viewIndex++) {
-    			moveViewAtIndexToLeft(viewIndex, upperChild, moveAmount);
+    	if(newMode){
+    		int upperChild = getUpperChild();
+    		if(upperChild<0)
+    			return;
+    		int viewReferenceIndex = getViewIndexTouchReference(upperChild);
+    		((StackViewContainer) layoutHolder.getChildAt(viewReferenceIndex)).movePanel(moveAmount);
+    		
+    	}else{
+	    	int count = layoutHolder.getChildCount();
+	    	if(count<1)
+	    		return ;
+	    	int upperChild = count -1;
+	    	if(isMovingToRight(moveAmount)){
+	    		lastDirection = RIGHT;
+	    		int viewReferenceIndex = upperChild;
+	    		if(currentInterceptedTouchedView!=NO_CHILD_TOUCHED){
+	    			viewReferenceIndex = currentInterceptedTouchedView;
+	    		}
+	    		moveViewAndUpperViews(viewReferenceIndex, moveAmount);
+				moveUnderViewsToRight(viewReferenceIndex);
+	    	}else{//moveLeft
+	    		lastDirection = LEFT;
+	    		for (int viewIndex = 0; viewIndex < count; viewIndex++) {
+	    			moveViewAtIndexToLeft(viewIndex, upperChild, moveAmount);
+		    	}
 	    	}
     	}
+	}
+
+	private int getUpperChild() {
+    	int nbChild = layoutHolder.getChildCount();
+    	return nbChild -1;
+	}
+
+	private int getViewIndexTouchReference(int upperChild) {
+		int viewReferenceIndex = upperChild;
+		if(currentInterceptedTouchedView!=NO_CHILD_TOUCHED){
+			boolean viewIsFixed = ((StackLayoutParams)layoutHolder.getChildAt(currentInterceptedTouchedView).getLayoutParams()).fixed;
+			if(!viewIsFixed){
+				viewReferenceIndex = currentInterceptedTouchedView;
+			}
+		}
+		return viewReferenceIndex;
 	}
 
 	private void moveViewAndUpperViews(int viewReferenceIndex, int moveAmount) {
@@ -74,8 +101,6 @@ public class MoveController implements OnMoveListener {
 		View viewMoved = layoutHolder.getChildAt(viewIndex);
 		StackLayoutParams viewMovedLp = (StackLayoutParams) viewMoved.getLayoutParams();
 		if(!viewMovedLp.fixed){
-			Rect dirty = new Rect(viewMovedLp.left-layoutHolder.getShadowWidth(), layoutHolder.getTop(), viewMovedLp.left, layoutHolder.getBottom());
-			layoutHolder.invalidate(dirty);
 			viewMovedLp.left -=moveAmount;
 			layoutHolder.updateViewLayout(viewMoved, viewMovedLp);
 		}
@@ -88,15 +113,13 @@ public class MoveController implements OnMoveListener {
 			return;
 		
 		for (int i = touchedChildViewIndex-1; i>=0; i--){
-			View underView = layoutHolder.getChildAt(i);
+			StackViewContainer underView = (StackViewContainer) layoutHolder.getChildAt(i);
 			StackLayoutParams underViewLp = (StackLayoutParams) underView.getLayoutParams();
 			if(underViewLp.fixed)
 				break;
 			
-			int underViewWidth = underView.getMeasuredWidth();
+			int underViewWidth = underView.getMeasuredWidthWithoutDecorView();
 			if(currentLp.left>=underViewLp.left+underViewWidth){
-				Rect dirty = new Rect(underViewLp.left-layoutHolder.getShadowWidth(), layoutHolder.getTop(),underViewLp.left, layoutHolder.getBottom());
-				layoutHolder.invalidate(dirty);
 				int newUnderLeftPos = currentLp.left - underViewWidth;
 				underViewLp.left = newUnderLeftPos;
 				layoutHolder.updateViewLayout(underView, underViewLp);
@@ -110,11 +133,11 @@ public class MoveController implements OnMoveListener {
 		View viewMoved = layoutHolder.getChildAt(viewIndex);
 		StackLayoutParams viewMovedLp = (StackLayoutParams) viewMoved.getLayoutParams();
 		if(!viewMovedLp.fixed){
-			Rect dirty = new Rect(viewMovedLp.left-layoutHolder.getShadowWidth(), layoutHolder.getTop(), viewMovedLp.left, layoutHolder.getBottom());
-			layoutHolder.invalidate(dirty);
 			viewMovedLp.left -=moveAmount;
-			if(viewMovedLp.left<0 && viewIndex != upperChild)
-				viewMovedLp.left=0;
+			StackLayoutParams lp = (StackLayoutParams)viewMovedLp.underView.getLayoutParams();
+			int underLeft = lp.left + viewMovedLp.underView.getDecorViewMeasuredWidth();
+			if(viewMovedLp.left<underLeft && viewIndex != upperChild)
+				viewMovedLp.left=underLeft;
 			layoutHolder.updateViewLayout(viewMoved, viewMovedLp);
 			return true;
 		}
@@ -130,58 +153,70 @@ public class MoveController implements OnMoveListener {
 
 	@Override
 	public void onEndMove(int velocity) {
-		int tooMuchRightDelta = 0;
-		int tooMuchLeftDelta = 0;
-		int notEnoughtRightDelta = 0;
-		int notEnoughtLeftDelta = 0;
-		int nbChild = layoutHolder.getChildCount();
-		for (int i = 0; i < nbChild; i++) {
-			View referenceMoveView = layoutHolder.getChildAt(i);
-			StackLayoutParams referenceMoveViewLp = (StackLayoutParams) referenceMoveView.getLayoutParams();
-			
-			int underLeft = layoutHolder.getLeft();
-			int underRight = layoutHolder.getRight();
-			if(referenceMoveViewLp.underView!=null){
-				View underReferenceMoveView = referenceMoveViewLp.underView;
-				StackLayoutParams underReferenceMoveLp = (StackLayoutParams) underReferenceMoveView.getLayoutParams();
-
-				underRight = underReferenceMoveLp.left + underReferenceMoveView.getMeasuredWidth();
-				underLeft = underReferenceMoveLp.left;
-			}
-
-			if(referenceMoveViewLp.left > underRight && tooMuchRightDelta==0){
-				tooMuchRightDelta += referenceMoveViewLp.left - underRight;
-			}
-			if(tooMuchRightDelta!=0 && tooMuchLeftDelta==0){
-				animViewLayout(i,tooMuchRightDelta, velocity);
-			}
-			if(referenceMoveViewLp.left < 0 && tooMuchLeftDelta==0){
-				tooMuchLeftDelta += referenceMoveViewLp.left ;
-			}
-			if(tooMuchLeftDelta!=0 && tooMuchRightDelta==0){
-				animViewLayout(i,tooMuchLeftDelta, velocity);
-			}
-			
-			
-			if(tooMuchLeftDelta==0  && tooMuchRightDelta==0 ){
-				if(lastDirection==RIGHT && notEnoughtRightDelta==0 && referenceMoveViewLp.left != underLeft && referenceMoveViewLp.left < underRight){
-					notEnoughtRightDelta += referenceMoveViewLp.left - underRight;
+    	if(newMode){
+			currentInterceptedTouchedView = NO_CHILD_TOUCHED;
+    	}else{
+			int tooMuchRightDelta = 0;
+			int tooMuchLeftDelta = 0;
+			int notEnoughtRightDelta = 0;
+			int notEnoughtLeftDelta = 0;
+			int nbChild = layoutHolder.getChildCount();
+			for (int i = 0; i < nbChild; i++) {
+				View referenceMoveView = layoutHolder.getChildAt(i);
+				StackLayoutParams referenceMoveViewLp = (StackLayoutParams) referenceMoveView.getLayoutParams();
+				if(!referenceMoveViewLp.fixed){
+					int underLeft = layoutHolder.getLeft();
+					int underRight = layoutHolder.getRight();
+					if(referenceMoveViewLp.underView!=null){
+						StackViewContainer underReferenceMoveView = referenceMoveViewLp.underView;
+						StackLayoutParams underReferenceMoveLp = (StackLayoutParams) underReferenceMoveView.getLayoutParams();
+		
+						underRight = underReferenceMoveLp.left + underReferenceMoveView.getMeasuredWidthWithoutDecorView();
+						underLeft = underReferenceMoveLp.left;
+					}
+		
+					if(referenceMoveViewLp.left > underRight && tooMuchRightDelta==0){
+						tooMuchRightDelta += referenceMoveViewLp.left - underRight;
+					}
+					if(tooMuchRightDelta!=0 && tooMuchLeftDelta==0){
+						animViewLayout(i,tooMuchRightDelta, velocity);
+					}
+					Log.i(TAG, "tooMuchLeftDelta  before "+tooMuchLeftDelta);
+					if(referenceMoveViewLp.left < underLeft && tooMuchLeftDelta==0){
+						tooMuchLeftDelta += referenceMoveViewLp.left - underLeft;
+					}
+					Log.i(TAG, "tooMuchLeftDelta after"+tooMuchLeftDelta);
+					if(tooMuchLeftDelta!=0 && tooMuchRightDelta==0){
+						animViewLayout(i,tooMuchLeftDelta, velocity);
+					}
+	
+					Log.i(TAG, "before toomuch evaluation");
+					Log.i(TAG, "tooMuchLeftDelta "+tooMuchLeftDelta+ " tooMuchRightDelta "+tooMuchRightDelta);
+					
+					if(tooMuchLeftDelta==0  && tooMuchRightDelta==0 ){
+						Log.i(TAG, "referenceMoveViewLp.left "+referenceMoveViewLp.left+ " underLeft "+underLeft);
+						
+						if(lastDirection==RIGHT && notEnoughtRightDelta==0 && referenceMoveViewLp.left != underLeft && referenceMoveViewLp.left < underRight){
+							notEnoughtRightDelta += referenceMoveViewLp.left - underRight;
+						}
+						if(notEnoughtRightDelta!=0 && notEnoughtLeftDelta==0){
+							animViewLayout(i,notEnoughtRightDelta, velocity);
+						}
+						if(lastDirection==LEFT && notEnoughtLeftDelta==0
+		//							&& referenceMoveViewLp.left != underLeft 
+								&& referenceMoveViewLp.left > underLeft){
+							notEnoughtLeftDelta += referenceMoveViewLp.left - underLeft;
+						}
+						if(notEnoughtLeftDelta!=0 && notEnoughtRightDelta==0){
+							animViewLayout(i,notEnoughtLeftDelta, velocity);
+						}
+					}
+	
+				
 				}
-				if(notEnoughtRightDelta!=0 && notEnoughtLeftDelta==0){
-					animViewLayout(i,notEnoughtRightDelta, velocity);
-				}
-				if(lastDirection==LEFT && notEnoughtLeftDelta==0
-//							&& referenceMoveViewLp.left != underLeft 
-						&& referenceMoveViewLp.left > underLeft){
-					notEnoughtLeftDelta += referenceMoveViewLp.left - underLeft;
-				}
-				if(notEnoughtLeftDelta!=0 && notEnoughtRightDelta==0){
-					animViewLayout(i,notEnoughtLeftDelta, velocity);
-				}
 			}
-			
-		}
-		currentInterceptedTouchedView = NO_CHILD_TOUCHED;
+			currentInterceptedTouchedView = NO_CHILD_TOUCHED;
+    	}
 	}
 
 	
@@ -213,9 +248,6 @@ public class MoveController implements OnMoveListener {
 				}
 
 				if(DEBUG)Log.i(TAG, "clean,\tpos:"+oldLeftInside+"\t"+System.currentTimeMillis());
-				Rect dirty = new Rect(oldLeftInside-layoutHolder.getShadowWidth(), layoutHolder.getTop(), oldLeftInside, layoutHolder.getBottom());
-				layoutHolder.invalidate(dirty);
-				
 				
 				oldLeftInside = lp.left;
 				layoutHolder.updateViewLayout(view, lp);
@@ -239,8 +271,6 @@ public class MoveController implements OnMoveListener {
 			
 			@Override
 			public void onAnimationEnd(Animator arg0) {
-				Rect dirty = new Rect(lp.left-layoutHolder.getShadowWidth(), layoutHolder.getTop(), lp.left, layoutHolder.getBottom());
-				layoutHolder.invalidate(dirty);
 				if(DEBUG)Log.i(TAG, "onAnimationEnd "+System.currentTimeMillis());
 			}
 			
@@ -265,7 +295,7 @@ public class MoveController implements OnMoveListener {
 			final int y = (int) event.getY(actionIndex);
 
 			for (int i = childrenCount - 1; i >= 0; i--) {
-				final View child = layoutHolder.getChildAt(i);
+				final StackViewContainer child = (StackViewContainer) layoutHolder.getChildAt(i);
 				if (isTransformedTouchPointInView(x, y, child)) {
 					return i;
 				}
@@ -275,7 +305,7 @@ public class MoveController implements OnMoveListener {
 	}
 	
 	
-	private boolean isTransformedTouchPointInView(int x, int y, View child) {
+	private boolean isTransformedTouchPointInView(int x, int y, StackViewContainer child) {
         final Rect frame = new Rect();
         child.getHitRect(frame);
         return frame.contains(x, y);

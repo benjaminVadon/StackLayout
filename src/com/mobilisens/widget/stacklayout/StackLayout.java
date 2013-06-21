@@ -22,6 +22,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.LayoutAnimationController;
 import android.view.animation.TranslateAnimation;
+import android.widget.ProgressBar;
 
 public class StackLayout extends ViewGroup{
 	
@@ -94,14 +95,48 @@ public class StackLayout extends ViewGroup{
         mSrc = new Rect(0, 0, mShadow.getWidth(), mShadow.getHeight());
 //        shadowRects = new ArrayList<Rect>(3);
 	}
-	
+
+
 	@Override
-	public void addView(View child, int index, android.view.ViewGroup.LayoutParams params) {
-		childAlreadyMeasured=false;
+	public void addView(View viewToAdd, int index, android.view.ViewGroup.LayoutParams params) {
+		View decorView = new View(getContext());
+		decorView.setBackgroundResource(R.drawable.photo_shadow);
+		decorView.setAlpha((float) 0.5);
+		addView(viewToAdd, decorView, index, params);
+//no more processing after this line
+//		addedView = getChildAt(getChildCount()-1);
+
+
+	}
+	
+	public void addView(View viewToAdd, View decorView, int index, android.view.ViewGroup.LayoutParams params) {
+		if(viewToAdd==null){
+			Log.e(TAG, "You need to provide at least a content view");
+			return;
+		}
 		int count = getChildCount();
+		index = checkAndGetIndex(index, count);
+		count = removeAllUselessView(index, count);
+		
+		if(viewToAdd instanceof StackViewContainer){
+			if(decorView!=null){
+				Log.e(TAG, "Your decorView won't be used because you already provide a StackViewContainer");
+			}
+			addStackViewContainer((StackViewContainer)viewToAdd, generateLayoutParams(params), index);
+		}else{
+			addViewInStackViewContainer(viewToAdd, decorView, index, params);
+		}
+	}
+	
+	private int checkAndGetIndex(int index, int count) {
 		if(index==-1){
 			index = count;
 		}
+		return index;
+	}
+	
+	private int removeAllUselessView(int index, int count) {
+		int finalCount = count;
 		if (index >= 0 && index < count) {
 			for (int i = index; i < count; i++) {
 				View deletedView = getChildAt(i);
@@ -109,138 +144,115 @@ public class StackLayout extends ViewGroup{
 			}
 			int nbViewToRemove = count - index;
 			removeViews(index, nbViewToRemove);
-			count -= nbViewToRemove;
+			finalCount -= nbViewToRemove;
 		}
-		StackLayoutParams lp = generateLayoutParams(params);
-		if (count > 0) {
-			View viewUnderAdded = getChildAt(count - 1);
-			lp.setUnderView(viewUnderAdded);
-			StackLayoutParams viewUnderAddedLp = (StackLayoutParams) viewUnderAdded.getLayoutParams();
-			if (!viewUnderAddedLp.fixed) {
-				int leftLimit = 0;
-				int rightLimit = 0;
-				if (viewUnderAddedLp.underView != null) {
-					View underUnderView = viewUnderAddedLp.underView;
-					StackLayoutParams underUnderViewLp = (StackLayoutParams) underUnderView.getLayoutParams();
-					rightLimit = underUnderViewLp.left + underUnderView.getMeasuredWidth();
-					leftLimit = underUnderViewLp.left;
-				}
-				int moveAmount = 0;
-				if (viewUnderAddedLp.left != leftLimit
-				&& viewUnderAddedLp.left != rightLimit) {
-					moveAmount -= leftLimit - viewUnderAddedLp.left;
-				} else if (rightLimit != 0
-						&& viewUnderAddedLp.left == rightLimit) {
-					moveAmount = viewUnderAdded.getMeasuredWidth() * 3 / 5;
-				}
+		return finalCount;
+	}
 
-				if (moveAmount != 0) {
-					for (int viewIndex = count - 1; viewIndex >= 0; viewIndex--) {
-						View viewMoved = getChildAt(viewIndex);
-						StackLayoutParams viewMovedLp = (StackLayoutParams) viewMoved.getLayoutParams();
-						if (!viewMovedLp.fixed) {
-							if (viewMovedLp.left - moveAmount < 0)
-								moveAmount = viewMovedLp.left - moveAmount;
-							moveController.animViewLayout(viewIndex, moveAmount, 0);
-							if (!lp.isPosSet())
-								lp.left = viewMovedLp.left
-										+ viewMoved.getMeasuredWidth()
-										- moveAmount;
-						}
-					}
-				}
-			}
-			if(lp.anchorForInit!=-1){
-				lp.left = lp.anchorForInit;
-			}
-		}
+    private void addStackViewContainer(StackViewContainer stackViewContainer, StackLayoutParams params, int index) {
+    	stackViewContainer.setIndexInParent(index);
+    	StackLayoutParams containerParams = buildStackViewContainerLayoutParams(stackViewContainer, params);
 
+		super.addView(stackViewContainer, index, containerParams);
 		
-		super.addView(child, index, lp);
-		
-		if(count!=0){
-			child.setAnimation(addChildAnimationController.getAnimationForView(child));
-		}
-		if(!child.hasOnClickListeners()){
-			child.setOnTouchListener(new OnTouchListener() {
-				
-				@Override
-				public boolean onTouch(View v, MotionEvent event) {
-					// TODO Auto-generated method stub
-					return true;
-				}
-			});
+		if(getChildCount()!=0){
+			stackViewContainer.setAnimation(addChildAnimationController.getAnimationForView(stackViewContainer));
 		}
 	}
 
-//	@Override
-//	protected void dispatchDraw(Canvas canvas) {
-//		Log.i(TAG, "dispatchDraw");
-//		super.dispatchDraw(canvas);
-//		drawShadowForAllChild(canvas);
-//	}
-	
-//	@Override
-//	public void draw(Canvas canvas) {
-//		Log.i(TAG, "draw");
-//		super.draw(canvas);
-//	}
 
-    private Bitmap mShadow;
+	private void addViewInStackViewContainer(View viewToAdd, View decorView, int index, LayoutParams params) {
+		StackViewContainer viewContainer = buildViewContainer(params);
+		viewContainer.addContentAndDecorViews(viewToAdd, decorView);
+		addStackViewContainer(viewContainer, (StackLayoutParams) viewContainer.getLayoutParams(), index);
+	}
+
+	private StackViewContainer buildViewContainer(LayoutParams params) {
+		StackViewContainer viewContainer = new StackViewContainer(getContext());
+		StackLayoutParams containerLayoutParams = generateLayoutParams(params);
+		viewContainer.setLayoutParams(containerLayoutParams);
+		return viewContainer;
+	}
+	
+	private StackLayoutParams buildStackViewContainerLayoutParams(StackViewContainer stackViewContainer, StackLayoutParams stackContainerParams) {
+		childAlreadyMeasured=false;
+		int count = getChildCount();
+
+		if (count > 0) {
+			StackViewContainer viewUnderAdded = (StackViewContainer) getChildAt(count - 1);
+			stackContainerParams.setUnderView(viewUnderAdded);
+			StackLayoutParams viewUnderAddedLp = (StackLayoutParams) viewUnderAdded.getLayoutParams();
+
+//			
+//			if (!viewUnderAddedLp.fixed) {
+//				int leftLimit = 0;
+//				int rightLimit = 0;
+//				if (viewUnderAddedLp.underView != null) {
+//					StackViewContainer underUnderView = viewUnderAddedLp.underView;
+//					StackLayoutParams underUnderViewLp = (StackLayoutParams) underUnderView.getLayoutParams();
+//					rightLimit += underUnderViewLp.left + underUnderView.getMeasuredWidth();
+//					leftLimit += underUnderViewLp.left;
+//				}
+//				int moveAmount = 0;
+//				if (viewUnderAddedLp.left != leftLimit
+//				&& viewUnderAddedLp.left != rightLimit) {
+//					moveAmount -= leftLimit - viewUnderAddedLp.left;
+//				} else if (rightLimit != 0
+//						&& viewUnderAddedLp.left == rightLimit) {
+//					moveAmount = viewUnderAdded.getMeasuredWidth() * 3 / 5;
+//				}
+////part for anim under view when adding a new one upper
+//				if (moveAmount != 0) {
+//					for (int viewIndex = count - 1; viewIndex >= 0; viewIndex--) {
+//						View viewMoved = getChildAt(viewIndex);
+//						StackLayoutParams viewMovedLp = (StackLayoutParams) viewMoved.getLayoutParams();
+//						if (!viewMovedLp.fixed) {
+//							if (viewMovedLp.left - moveAmount < 0)
+//								moveAmount = viewMovedLp.left - moveAmount;
+//							moveController.animViewLayout(viewIndex, moveAmount, 0);
+//							if (!stackContainerParams.isPosSet())
+//								stackContainerParams.left = viewMovedLp.left
+//										+ viewMoved.getMeasuredWidth()
+//										- moveAmount;
+//						}
+//					}
+//				}
+//			}
+			if(stackContainerParams.anchorForInit!=-1){
+				stackContainerParams.left = stackContainerParams.anchorForInit;
+			}
+		}
+		
+		return stackContainerParams;
+	}
+
+	private Bitmap mShadow;
     private Rect mSrc;
     private final Rect mDst = new Rect();
 	private ArrayList<Integer> shadowPosList = new ArrayList<Integer>();
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        super.dispatchDraw(canvas);
-        drawAllShadows(canvas);
-    }
+//    @Override
+//    protected void dispatchDraw(Canvas canvas) {
+//        super.dispatchDraw(canvas);
+//        drawAllShadows(canvas);
+//    }
 //
-//	private void removeAllShadows() {
-//		if(!shadowPosList.isEmpty()){
-//			int shadowWidth = getShadowWidth();
-//			int top = getTop();
-//			int bottom = getBottom();
-//			for(int left: shadowPosList){
-//				Rect dirty = new Rect(left-shadowWidth, top, left, bottom);
-//				invalidate(dirty);
-//			}
-//		}
+//    private void drawAllShadows(Canvas canvas) {
+//        final int count = getChildCount();
+//        for (int i = count-1; i >= 0; i--) {
+//            final View child = getChildAt(i);
+//            
+//            final int left = (int)child.getX();
+//            if(DEBUG)Log.i(TAG, "draw,\tpos:"+left+"\t"+System.currentTimeMillis());
+//            mDst.set(left - mShadow.getWidth(), 0, left, getHeight());
+//
+//            canvas.drawBitmap(mShadow, mSrc, mDst, null);
+//            shadowPosList.add(left);
+//        }
 //	}
-
-    private void drawAllShadows(Canvas canvas) {
-        final int count = getChildCount();
-        for (int i = count-1; i >= 0; i--) {
-            final View child = getChildAt(i);
-            
-            final int left = (int)child.getX();
-            if(DEBUG)Log.i(TAG, "draw,\tpos:"+left+"\t"+System.currentTimeMillis());
-            mDst.set(left - mShadow.getWidth(), 0, left, getHeight());
-
-            canvas.drawBitmap(mShadow, mSrc, mDst, null);
-            shadowPosList.add(left);
-        }
-	}
     
 	public int getShadowWidth(){
     	return mShadow.getWidth();
     }
-//	private void drawShadowForAllChild(Canvas canvas){
-//		int count = getChildCount();
-//		for (int i = 0; i < count; i++) {
-//			View child = getChildAt(i);
-//			drawShadow(canvas, child);
-//		}
-//	}
-//	
-//	private void drawShadow(Canvas canvas, View child) {
-//		int childLeftPos = child.getLeft();
-//		if(childLeftPos>getLeft()){
-//			int shadowWidth = 30;
-//			shadowDrawable.setBounds(childLeftPos-shadowWidth, 0, childLeftPos, getHeight());
-//			shadowDrawable.draw(canvas);
-//		}
-//	}
 
     
 	@Override
@@ -257,7 +269,7 @@ public class StackLayout extends ViewGroup{
         
         int underRight = 0;
         for (int i = 0; i < count; i++) {
-            final View child = getChildAt(i);
+            final StackViewContainer child = (StackViewContainer) getChildAt(i);
             final StackLayoutParams lp = (StackLayoutParams) child.getLayoutParams();
             int childWidthMeasureSpec;
             int childHeightMeasureSpec;
@@ -275,6 +287,8 @@ public class StackLayout extends ViewGroup{
             
             childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(getMeasuredHeight(), MeasureSpec.EXACTLY);
 
+        	View childContent = child.getContentView();
+//            childContent.measure(childWidthMeasureSpec, childHeightMeasureSpec);
             child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
             
             if(!lp.isPosSet()){
@@ -283,9 +297,15 @@ public class StackLayout extends ViewGroup{
             	}else{
             		lp.left = underRight;
             	}
+
+    			if(child.decorViewIsPresent()){
+    				int decorWidth = child.getDecorView().getMeasuredWidth();
+    				lp.left -= decorWidth;
+    			}
             	requestLayout();
             }
             underRight = lp.left+ child.getMeasuredWidth();
+
         }
     }
 	
@@ -300,7 +320,7 @@ public class StackLayout extends ViewGroup{
                 final int width = child.getMeasuredWidth();
                 final int height = child.getMeasuredHeight();
 
-                int childLeft = lp.left;
+                int childLeft = lp.getViewPos();//lp.left;
                 int childTop = top;
 
                 child.layout(childLeft, childTop, childLeft + width, childTop + height);
@@ -332,6 +352,12 @@ public class StackLayout extends ViewGroup{
 		return false;
 	}
 
+
+	public int getActivePointerId() {
+		return touchController.getActivePointerId();
+	}
+	
+	
 	//Layout Params part
 	@Override
 	protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
@@ -374,17 +400,24 @@ public class StackLayout extends ViewGroup{
 	public static class StackLayoutParams extends ViewGroup.LayoutParams {
 		private static final int POS_NOT_SET = Integer.MIN_VALUE;
 		int left = POS_NOT_SET;
-		View underView = null;
+		StackViewContainer underView = null;
 		boolean bestWidthFromParent = false;
 		boolean fixed = false;
 		private int anchorForInit = -1;
+		int needShadow = 0;
+		
+		
+		private int contentViewLeftPos = POS_NOT_SET;
+		private int[] anchors;
+		private int decorViewWidth = 0;
+		
 		
 		public StackLayoutParams(int w, int h) {
 			super(w, h);
 			this.left = POS_NOT_SET;
 		}
 
-		public void setUnderView(View underView) {
+		public void setUnderView(StackViewContainer underView) {
 			this.underView = underView;
 		}
 
@@ -394,6 +427,9 @@ public class StackLayout extends ViewGroup{
 			try {
 				bestWidthFromParent = a.getBoolean(R.styleable.StackLayoutParams_best_width_from_parent, false);
 				fixed = a.getBoolean(R.styleable.StackLayoutParams_fixed, false);
+				
+				needShadow = a.getInt(R.styleable.StackLayoutParams_need_shadow, 0);
+				
 				anchorForInit = a.getInteger(R.styleable.StackLayoutParams_anchor_for_init, -1);
 			} finally {
 				a.recycle();
@@ -411,10 +447,58 @@ public class StackLayout extends ViewGroup{
 		public int getLeft(){
 			return this.left;
 		}
-	}
 
-	public int getActivePointerId() {
-		return touchController.getActivePointerId();
+		public void changeContentViewPos(int moveAmount) {
+			if(contentViewLeftPos!=POS_NOT_SET){
+				contentViewLeftPos -= moveAmount;
+			}
+		}
+
+		public void setViewPos(int leftPos) {
+			contentViewLeftPos = leftPos;
+		}
+		
+		public int getContentViewPos(){
+			return contentViewLeftPos;
+		}
+
+		public int getViewPos(){
+			return contentViewLeftPos-decorViewWidth;
+		}
+		
+		public void setDecorViewWidth(int viewWidth) {
+			decorViewWidth = viewWidth;
+		}
+
+		public int getDecorViewWidth() {
+			return decorViewWidth;
+		}
+		
+		public boolean isViewPosSet() {
+			return contentViewLeftPos != POS_NOT_SET;
+		}
+
+		public int shouldMove(int moveAmount) {
+			if(contentViewLeftPos<=anchors[0])
+				return 0;
+			if(contentViewLeftPos>=anchors[anchors.length-1])
+				return 0;
+			if(contentViewLeftPos-moveAmount<=anchors[0])
+				return contentViewLeftPos-anchors[0];
+			if(contentViewLeftPos-moveAmount>=anchors[anchors.length-1])
+				return contentViewLeftPos-anchors[anchors.length-1];
+			return moveAmount;
+		}
+		
+		public void initAnchors(int[] anchorsArray){
+			anchors = anchorsArray;
+		}
+		
+		public void updateAnchors(int moveAmount){
+			for(int i=0; i<anchors.length; i++){
+				anchors[i]-=moveAmount;
+			}
+		}
+		
 	}
-	
 }
