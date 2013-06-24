@@ -4,7 +4,6 @@
     <declare-styleable name="StackLayoutParams">
         <attr name="best_width_from_parent" format="boolean"/>
         <attr name="fixed" format="boolean"/>
-        <attr name="anchor_for_init" format="integer"/>
         <attr name="need_shadow" >
 			<flag name="top" value="0x30" />
 			<flag name="bottom" value="0x50" />
