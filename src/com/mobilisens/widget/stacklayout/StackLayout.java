@@ -341,6 +341,8 @@ public class StackLayout extends ViewGroup{
 	}
 
 	public static class StackLayoutParams extends ViewGroup.LayoutParams {
+		
+		private final String TAG = getClass().getSimpleName();
 		private static final int POS_NOT_SET = Integer.MIN_VALUE;
 		StackViewContainer underView = null;
 		boolean bestWidthFromParent = false;
@@ -449,6 +451,19 @@ public class StackLayout extends ViewGroup{
 		
 		public int getRightAnchor() {
 			return anchors[anchors.length-1];
+		}
+
+		public int getDistanceToNearestAnchor() {
+			Log.i(TAG, "getDistanceToNearestAnchor");
+			int diff = Integer.MAX_VALUE;
+			for(int i=0; i<anchors.length; i++){
+				int value = getContentViewPos()-anchors[i];
+				if(Math.abs(diff)>= Math.abs(value)){
+					diff = value;
+				}
+				Log.i(TAG, "diff " +diff);
+			}
+			return diff;
 		}
 		
 	}

@@ -49,11 +49,7 @@ public class MoveController implements OnMoveListener {
 		int viewReferenceIndex = getViewIndexTouchReference(upperChild);
 		((StackViewContainer) layoutHolder.getChildAt(viewReferenceIndex)).movePanel(moveAmount);
 
-    	if(isMovingToRight(moveAmount)){
-    		lastDirection = RIGHT;
-    	}else{
-    		lastDirection = LEFT;
-    	}
+		lastDirection = isMovingToRight(moveAmount);
 	}
 
 	private int getUpperChild() {
@@ -82,8 +78,13 @@ public class MoveController implements OnMoveListener {
 	@Override
 	public void onEndMove(int velocity) {
     	if(newMode){
-    		
-    		
+
+    		int upperChild = getUpperChild();
+    		if(upperChild<0)
+    			return;
+    		int viewReferenceIndex = getViewIndexTouchReference(upperChild);
+    		StackViewContainer child = ((StackViewContainer) layoutHolder.getChildAt(viewReferenceIndex));
+    		child.animToNearestAnchor(velocity);
 			currentInterceptedTouchedView = NO_CHILD_TOUCHED;
     	}else{
 			int tooMuchRightDelta = 0;

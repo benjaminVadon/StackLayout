@@ -1,6 +1,11 @@
 package com.mobilisens.widget.stacklayout;
 
 import com.mobilisens.widget.stacklayout.StackLayout.StackLayoutParams;
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.Animator.AnimatorListener;
+import com.nineoldandroids.animation.ObjectAnimator;
+import com.nineoldandroids.animation.ValueAnimator;
+import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
 
 import android.content.Context;
 import android.graphics.Rect;
@@ -16,6 +21,8 @@ import android.widget.RelativeLayout.LayoutParams;
 
 public class StackViewContainer extends LinearLayout {
 
+	private static final long MAX_ANIMATION_DURATION = 400;
+	private static final int MIN_VELOCITY_TO_FLING = 100;
 	private final String LOG_TAG = getClass().getSimpleName();
 	private final boolean DEBUG = false;
 	private boolean isMeasured = false;
@@ -283,6 +290,75 @@ public class StackViewContainer extends LinearLayout {
 		super.getHitRect(outRect);
 		int width = getMeasuredWidthWithoutDecorView();
 		outRect.left += (outRect.width()-width);
+	}
+
+	public void animToNearestAnchor(int velocity) {
+//		Log.i(LOG_TAG, "moveToNearestAnchor");
+//		Log.i(LOG_TAG, "velocity "+velocity);
+		StackLayoutParams params = ((StackLayoutParams)getLayoutParams());
+		int moveAmount = 0;
+//		if(velocity<MIN_VELOCITY_TO_FLING){
+			moveAmount = params.getDistanceToNearestAnchor();
+//		}
+		if(moveAmount!=0){
+			animPanel(moveAmount, velocity);
+			if(hasUpperView()){
+				animUpperPanel(moveAmount, velocity);
+			}
+		}
+	}
+
+	private void animUpperPanel(int moveAmount, int velocity) {
+		StackLayout parent = ((StackLayout)getParent());
+		int nbChild = parent.getChildCount();
+		for(int i=indexInParent+1; i<nbChild; i++){
+			((StackViewContainer)parent.getChildAt(i)).animPanel(moveAmount, velocity);
+		}
+	}
+
+	private void animPanel(final int moveAmount, int velocity) {
+		final StackLayoutParams params = (StackLayoutParams) getLayoutParams();
+		final ObjectAnimator animator = ObjectAnimator.ofInt(params, "contentViewPos", params.getContentViewPos()-moveAmount);
+		if(velocity!=0){
+	        velocity = Math.abs(velocity);
+	        long duration = Math.round(1000 * Math.abs((float)moveAmount / velocity));
+			duration = Math.min(duration, MAX_ANIMATION_DURATION);
+			animator.setDuration(duration);
+		}
+		animator.addUpdateListener(new AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				//part for stoping animation if view is deleted during animation
+				int count = ((StackLayout)getParent()).getChildCount();
+				if(indexInParent>count-1){
+					animator.cancel();
+					return;
+				}
+				View currentViewAtPosI = ((StackLayout)getParent()).getChildAt(indexInParent);
+				if(currentViewAtPosI!= StackViewContainer.this){
+					animator.cancel();
+					return;
+				}
+				((StackLayout)getParent()).updateViewLayout(StackViewContainer.this, params);
+			}
+		});
+		animator.addListener(new AnimatorListener() {
+			@Override
+			public void onAnimationStart(Animator arg0) {
+			}
+			@Override
+			public void onAnimationRepeat(Animator arg0) {
+			}
+			@Override
+			public void onAnimationEnd(Animator arg0) {
+				if(hasUpperView())
+					updateUpperPanelAnchors(moveAmount);
+			}
+			@Override
+			public void onAnimationCancel(Animator arg0) {
+			}
+		});
+		animator.start();
 	}
 	
 }
