@@ -14,16 +14,13 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.View.MeasureSpec;
 import android.view.ViewParent;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.RelativeLayout.LayoutParams;
 
 public class StackViewContainer extends LinearLayout {
 
 	private static final long MAX_ANIMATION_DURATION = 400;
-	private static final int MIN_VELOCITY_TO_FLING = 100;
+	private static final int MIN_VELOCITY_TO_FLING = 300;
 	private final String LOG_TAG = getClass().getSimpleName();
 	private final boolean DEBUG = false;
 	private boolean isMeasured = false;
@@ -163,7 +160,6 @@ public class StackViewContainer extends LinearLayout {
 		}
 		
 		setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
-//		((StackLayoutParams)getLayoutParams()).setViewPos();
 		
 		setLayoutParamsViewPos();
 	}
@@ -184,15 +180,18 @@ public class StackViewContainer extends LinearLayout {
         	if(indexInParent==0){
         		int underPos = ((StackLayout) getParent()).getLeft();
         		params.setContentViewPos(underPos);
-        		params.initAnchors(new int[]{underPos});
+				params.setUnderPos(underPos);
+//        		params.initAnchors(new int[]{underPos});
         	}else{
         		StackViewContainer underView = (StackViewContainer) ((StackLayout) getParent()).getChildAt(indexInParent-1);
         		StackLayoutParams underParams = (StackLayoutParams)underView.getLayoutParams();
         		int underViewPos = underParams.getContentViewPos();
         		if(DEBUG)Log.i(LOG_TAG, "underViewPos "+underViewPos);
 				int underWidth = underView.getMeasuredWidth()-underParams.getDecorViewWidth();
-				params.setContentViewPos((int) (underViewPos+(underWidth*1.7f/3.f)));
-				params.initAnchors(new int[]{underViewPos,underViewPos+underWidth});
+				
+				params.setContentViewPos(underViewPos+underWidth);
+				params.setUnderPosAndWidth(underViewPos, underWidth);
+//				params.initAnchors(new int[]{underViewPos, (int) (underViewPos+(underWidth*1.7f/3.f)), underViewPos+underWidth});
         	}
 
 			
@@ -210,16 +209,21 @@ public class StackViewContainer extends LinearLayout {
 		StackLayoutParams params = (StackLayoutParams) getLayoutParams();
 		if(!params.fixed){
 			boolean hasUpperView = hasUpperView();
-			int realAmountForCurrentPanel = params.changeContentViewPos(moveAmount, hasUpperView);
+			params.changeContentViewPos(moveAmount, hasUpperView);
 			((StackLayout) getParent()).updateViewLayout(this, params);
 			if(hasUpperView){
-				updateUpperPanelAnchors(realAmountForCurrentPanel);
+				updateUpperPanelAnchors(params);
 			}
 			isMoving = true;
 			moveOtherPanels(moveAmount, params);
 			isMoving = false;
 		}
 		
+	}
+	
+	private void updateUpperPanelAnchors(StackLayoutParams params) {
+		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" updateUpperPanelAnchors");
+		((StackLayoutParams)(((StackLayout)getParent()).getChildAt(indexInParent+1)).getLayoutParams()).updateUnderPos(params.getContentViewPos());
 	}
 
 	private void moveOtherPanels(int moveAmount, StackLayoutParams params) {
@@ -232,10 +236,6 @@ public class StackViewContainer extends LinearLayout {
 		}
 	}
 
-	private void updateUpperPanelAnchors(int moveAmount) {
-		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" updateUpperPanelAnchors");
-		((StackLayoutParams)(((StackLayout)getParent()).getChildAt(indexInParent+1)).getLayoutParams()).updateAnchors(moveAmount);
-	}
 
 	private void moveUpperPanel(int moveAmount) {
 		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" moveUpperPanel");
@@ -298,12 +298,13 @@ public class StackViewContainer extends LinearLayout {
 
 	public void animToNearestAnchor(int velocity) {
 //		Log.i(LOG_TAG, "moveToNearestAnchor");
-//		Log.i(LOG_TAG, "velocity "+velocity);
 		StackLayoutParams params = ((StackLayoutParams)getLayoutParams());
 		int moveAmount = 0;
-//		if(velocity<MIN_VELOCITY_TO_FLING){
+		if(Math.abs(velocity)<MIN_VELOCITY_TO_FLING){
 			moveAmount = params.getDistanceToNearestAnchor();
-//		}
+		}else{
+			moveAmount = params.getDistanceToNearestAnchor(velocity);
+		}
 		if(moveAmount!=0){
 			animPanel(moveAmount, velocity);
 			if(hasUpperView()){
@@ -322,6 +323,10 @@ public class StackViewContainer extends LinearLayout {
 
 	private void animPanel(final int moveAmount, int velocity) {
 		final StackLayoutParams params = (StackLayoutParams) getLayoutParams();
+
+		if(params.fixed)
+			return;
+		
 		final ObjectAnimator animator = ObjectAnimator.ofInt(params, "contentViewPos", params.getContentViewPos()-moveAmount);
 		if(velocity!=0){
 	        velocity = Math.abs(velocity);
@@ -361,13 +366,26 @@ public class StackViewContainer extends LinearLayout {
 			@Override
 			public void onAnimationEnd(Animator arg0) {
 				if(hasUpperView())
-					updateUpperPanelAnchors(moveAmount);
+					updateUpperPanelAnchors((StackLayoutParams) getLayoutParams());
 			}
 			@Override
 			public void onAnimationCancel(Animator arg0) {
 			}
 		});
 		animator.start();
+	}
+
+	public void animToLeftAnchor() {
+		StackLayoutParams params = ((StackLayoutParams)getLayoutParams());
+		if(params.fixed)
+			return;
+		int moveAmount = params.getDistanceToLeftAnchor();
+		if(moveAmount!=0){
+			animPanel(moveAmount, 0);
+			if(hasUpperView()){
+				animUpperPanel(moveAmount, 0);
+			}
+		}
 	}
 	
 }

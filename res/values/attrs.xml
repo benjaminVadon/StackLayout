@@ -10,6 +10,8 @@
 	        <flag name="left" value="0x03" />
 	        <flag name="right" value="0x05" />
          </attr>
+        <attr name="anchorsList" format="string"/>
+         
     </declare-styleable>
 
 </resources>

@@ -1,15 +1,9 @@
 package com.mobilisens.widget.stacklayout;
 
-import java.util.ArrayList;
-
 import com.mobilisens.widget.stacklayout.R;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
@@ -19,10 +13,10 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationSet;
 import android.view.animation.LayoutAnimationController;
 import android.view.animation.TranslateAnimation;
-import android.widget.ProgressBar;
 
 public class StackLayout extends ViewGroup{
 	
@@ -31,7 +25,7 @@ public class StackLayout extends ViewGroup{
 
 	private TouchController touchController;
 	private MoveController moveController;
-	private boolean childAlreadyMeasured =false;
+//	private boolean childAlreadyMeasured =false;
 	private int deviceWidth;
 	private int deviveHeight;
 	
@@ -43,7 +37,7 @@ public class StackLayout extends ViewGroup{
         AnimationSet set = new AnimationSet(true);
 
         Animation animation = new AlphaAnimation(0.0f, 1.0f);
-        animation.setDuration(100);
+        animation.setDuration(300);
         set.addAnimation(animation);
 
         animation = new TranslateAnimation(
@@ -54,15 +48,20 @@ public class StackLayout extends ViewGroup{
         set.addAnimation(animation);
 
         addChildAnimationController = new LayoutAnimationController(set);
-         
+        
          
          AnimationSet removeSet = new AnimationSet(true);
 
          animation = new AlphaAnimation(1.0f, 0.0f);
-         animation.setDuration(350);
+         animation.setDuration(250);
+         removeSet.addAnimation(animation);
+         animation = new TranslateAnimation(
+                 Animation.RELATIVE_TO_SELF, 0.0f,Animation.RELATIVE_TO_SELF, 1.0f,
+                 Animation.RELATIVE_TO_SELF, 0.0f,Animation.RELATIVE_TO_SELF, 0.0f
+             );
+         animation.setDuration(250);
          removeSet.addAnimation(animation);
 
-         removeSet.addAnimation(animation);
 
          removeChildAnimationController = new LayoutAnimationController(removeSet);
 	}
@@ -97,9 +96,8 @@ public class StackLayout extends ViewGroup{
 	public void addView(View viewToAdd, int index, android.view.ViewGroup.LayoutParams params) {
 		View decorView = new View(getContext());
 		decorView.setBackgroundResource(R.drawable.photo_shadow);
-		decorView.setAlpha((float) 0.5);
 		addView(viewToAdd, decorView, index, params);
-//no more processing after this line
+		//no more processing after this line
 	}
 	
 	public void addView(View viewToAdd, View decorView, int index, android.view.ViewGroup.LayoutParams params) {
@@ -159,61 +157,37 @@ public class StackLayout extends ViewGroup{
     private void addStackViewContainer(StackViewContainer stackViewContainer, StackLayoutParams params, int index) {
     	stackViewContainer.setIndexInParent(index);
     	StackLayoutParams containerParams = buildStackViewContainerLayoutParams(stackViewContainer, params);
+    	
+    	
+    	final int nbChildBeforeAdd = getChildCount();
+		if(nbChildBeforeAdd!=0){
 
-		super.addView(stackViewContainer, index, containerParams);
-		
-		if(getChildCount()!=0){
+			if(nbChildBeforeAdd>0){
+				Animation animation = addChildAnimationController.getAnimation();
+				animation.setAnimationListener(new AnimationListener() {
+					@Override
+					public void onAnimationStart(Animation animation) {
+					}
+					
+					@Override
+					public void onAnimationRepeat(Animation animation) {
+					}
+					
+					@Override
+					public void onAnimationEnd(Animation animation) {
+						((StackViewContainer)getChildAt(nbChildBeforeAdd-1)).animToLeftAnchor();
+						animation.setAnimationListener(null);
+					}
+				});
+			}
+
 			stackViewContainer.setAnimation(addChildAnimationController.getAnimationForView(stackViewContainer));
 		}
+		super.addView(stackViewContainer, index, containerParams);
 	}
 
 	
 	private StackLayoutParams buildStackViewContainerLayoutParams(StackViewContainer stackViewContainer, StackLayoutParams stackContainerParams) {
-		childAlreadyMeasured=false;
-		int count = getChildCount();
-
-		if (count > 0) {
-			StackViewContainer viewUnderAdded = (StackViewContainer) getChildAt(count - 1);
-			stackContainerParams.setUnderView(viewUnderAdded);
-			StackLayoutParams viewUnderAddedLp = (StackLayoutParams) viewUnderAdded.getLayoutParams();
-
-//			
-//			if (!viewUnderAddedLp.fixed) {
-//				int leftLimit = 0;
-//				int rightLimit = 0;
-//				if (viewUnderAddedLp.underView != null) {
-//					StackViewContainer underUnderView = viewUnderAddedLp.underView;
-//					StackLayoutParams underUnderViewLp = (StackLayoutParams) underUnderView.getLayoutParams();
-//					rightLimit += underUnderViewLp.left + underUnderView.getMeasuredWidth();
-//					leftLimit += underUnderViewLp.left;
-//				}
-//				int moveAmount = 0;
-//				if (viewUnderAddedLp.left != leftLimit
-//				&& viewUnderAddedLp.left != rightLimit) {
-//					moveAmount -= leftLimit - viewUnderAddedLp.left;
-//				} else if (rightLimit != 0
-//						&& viewUnderAddedLp.left == rightLimit) {
-//					moveAmount = viewUnderAdded.getMeasuredWidth() * 3 / 5;
-//				}
-////part for anim under view when adding a new one upper
-//				if (moveAmount != 0) {
-//					for (int viewIndex = count - 1; viewIndex >= 0; viewIndex--) {
-//						View viewMoved = getChildAt(viewIndex);
-//						StackLayoutParams viewMovedLp = (StackLayoutParams) viewMoved.getLayoutParams();
-//						if (!viewMovedLp.fixed) {
-//							if (viewMovedLp.left - moveAmount < 0)
-//								moveAmount = viewMovedLp.left - moveAmount;
-//							moveController.animViewLayout(viewIndex, moveAmount, 0);
-//							if (!stackContainerParams.isPosSet())
-//								stackContainerParams.left = viewMovedLp.left
-//										+ viewMoved.getMeasuredWidth()
-//										- moveAmount;
-//						}
-//					}
-//				}
-//			}
-		}
-		
 		return stackContainerParams;
 	}
 
@@ -227,9 +201,6 @@ public class StackLayout extends ViewGroup{
 
         setMeasuredDimension(getDefaultSize(maxWidth, widthMeasureSpec), getDefaultSize(maxHeight, heightMeasureSpec));
 
-        if(childAlreadyMeasured)
-        	return;
-        
         for (int i = 0; i < count; i++) {
             final StackViewContainer child = (StackViewContainer) getChildAt(i);
             final StackLayoutParams lp = (StackLayoutParams) child.getLayoutParams();
@@ -265,7 +236,7 @@ public class StackLayout extends ViewGroup{
                 final int width = child.getMeasuredWidth();
                 final int height = child.getMeasuredHeight();
 
-                int childLeft = lp.getViewPos();//lp.left;
+                int childLeft = lp.getViewPos();
                 int childTop = top;
 
                 child.layout(childLeft, childTop, childLeft + width, childTop + height);
@@ -321,8 +292,9 @@ public class StackLayout extends ViewGroup{
 		return params;
 	}
 	
-	public StackLayoutParams generateLayoutParams(boolean fixed, boolean bestWidthFromParent, int anchorForInit) {
+	public StackLayoutParams generateLayoutParams(boolean fixed, boolean bestWidthFromParent, String anchorsString) {
 		StackLayoutParams params = generateLayoutParams(fixed, bestWidthFromParent);
+		params.initAnchors(anchorsString);
 		return params;
 	}
 	
@@ -345,23 +317,21 @@ public class StackLayout extends ViewGroup{
 		
 		private final String TAG = getClass().getSimpleName();
 		private static final int POS_NOT_SET = Integer.MIN_VALUE;
-		StackViewContainer underView = null;
 		boolean bestWidthFromParent = false;
 		boolean fixed = false;
 		int needShadow = 0;
 		
 		
 		private int contentViewPos = POS_NOT_SET;
-		private int[] anchors;
+		private int[] anchors = new int[1];
+		private float[] anchorsRef = new float[]{0.f};
 		private int decorViewWidth = 0;
+		private int underPos;
+		private int underWidth;
 		
 		
 		public StackLayoutParams(int w, int h) {
 			super(w, h);
-		}
-
-		public void setUnderView(StackViewContainer underView) {
-			this.underView = underView;
 		}
 
 		public StackLayoutParams(Context context, AttributeSet attrs) {
@@ -372,13 +342,26 @@ public class StackLayout extends ViewGroup{
 				fixed = a.getBoolean(R.styleable.StackLayoutParams_fixed, false);
 				
 				needShadow = a.getInt(R.styleable.StackLayoutParams_need_shadow, 0);
-				
+				String anchorsString = a.getString(R.styleable.StackLayoutParams_anchorsList);
+				if(anchorsString!=null && !anchorsString.isEmpty()){
+					initAnchors(anchorsString);
+				}
 			} finally {
 				a.recycle();
 			}
+			
 		}
 
-		public int changeContentViewPos(int moveAmount, boolean hasUpperChild) {
+		public void initAnchors(String anchorsString) {
+			String[] anchorsStringList = anchorsString.split(";");
+			anchorsRef = new float[anchorsStringList.length];
+			anchors = new int[anchorsStringList.length];
+			for(int i=0; i<anchorsStringList.length; i++){
+				anchorsRef[i] = Float.parseFloat(anchorsStringList[i]);
+			}
+		}
+
+		public void changeContentViewPos(int moveAmount, boolean hasUpperChild) {
 			if(contentViewPos!=POS_NOT_SET){
 				if(hasUpperChild){
 					int diff = getContentViewPos() - getLeftAnchor();
@@ -386,15 +369,16 @@ public class StackLayout extends ViewGroup{
 						moveAmount = diff;
 					}
 				}
-
 				contentViewPos -= moveAmount;
-				
 			}
-			return moveAmount;
 		}
 
 		public boolean isUnAnchored() {
-			return getContentViewPos()>getRightAnchor();
+			for(int i=0; i<anchors.length; i++){
+				if(anchors[i]==getContentViewPos())
+					return false;
+			}
+			return true;
 		}
 
 		public void setContentViewPos(int leftPos) {
@@ -439,17 +423,6 @@ public class StackLayout extends ViewGroup{
 			}
 			
 		}
-		
-
-		public void initAnchors(int[] anchorsArray){
-			anchors = anchorsArray;
-		}
-		
-		public void updateAnchors(int moveAmount){
-			for(int i=0; i<anchors.length; i++){
-				anchors[i]-=moveAmount;
-			}
-		}
 
 		private int getLeftAnchor() {
 			return anchors[0];
@@ -471,6 +444,63 @@ public class StackLayout extends ViewGroup{
 			}
 			return result;
 		}
+
+		public int getDistanceToLeftAnchor() {
+			return getContentViewPos()-getLeftAnchor();
+		}
+
+		public int getDistanceToNearestAnchor(int velocity) {
+			int anchor;
+			if(velocity>0){
+				anchor = getNextAnchor();
+			}else{
+				anchor = getPreviousAnchor();
+			}
+			
+			return getContentViewPos()-anchor;
+		}
+
+		private int getNextAnchor() {
+			int result = getRightAnchor();
+			for(int i=anchors.length-1; i>=0; i--){
+				if( anchors[i]<getContentViewPos())
+					break;
+				else
+					result = anchors[i];
+			}
+			return result;
+		}
+
+		private int getPreviousAnchor() {
+			int result = getLeftAnchor();
+			for(int i=0; i<anchors.length; i++){
+				if( anchors[i]>getContentViewPos())
+					break;
+				else
+					result = anchors[i];
+			}
+			return result;
+		}
+
+		public void setUnderPos(int underPos) {
+			setUnderPosAndWidth(underPos, 0);
+		}
+
+		public void setUnderPosAndWidth(int underPos, int underWidth) {
+			this.underPos = underPos;
+			this.underWidth = underWidth;
+			resetAnchors();
+		}
+
+		public void updateUnderPos(int underPos){
+			this.underPos = underPos;
+			resetAnchors();
+		}
 		
+		private void resetAnchors() {
+			for(int i=0; i<anchorsRef.length; i++){
+				anchors[i]=(int)(anchorsRef[i]*underWidth)+underPos;
+			}
+		}
 	}
 }
