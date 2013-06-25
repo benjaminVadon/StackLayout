@@ -78,13 +78,16 @@ public class MoveController implements OnMoveListener {
 	@Override
 	public void onEndMove(int velocity) {
     	if(newMode){
-
-    		int upperChild = getUpperChild();
-    		if(upperChild<0)
-    			return;
-    		int viewReferenceIndex = getViewIndexTouchReference(upperChild);
-    		StackViewContainer child = ((StackViewContainer) layoutHolder.getChildAt(viewReferenceIndex));
-    		child.animToNearestAnchor(velocity);
+    		StackViewContainer unAnchoredPanel = getUnAnchoredPanel();
+    		if(unAnchoredPanel==null){
+        		int upperChild = getUpperChild();
+        		if(upperChild<0)
+        			return;
+        		int viewReferenceIndex = getViewIndexTouchReference(upperChild);
+        		unAnchoredPanel = ((StackViewContainer) layoutHolder.getChildAt(viewReferenceIndex));
+        	}
+    		
+    		unAnchoredPanel.animToNearestAnchor(velocity);
 			currentInterceptedTouchedView = NO_CHILD_TOUCHED;
     	}else{
 			int tooMuchRightDelta = 0;
@@ -151,6 +154,18 @@ public class MoveController implements OnMoveListener {
 	}
 
 	
+	private StackViewContainer getUnAnchoredPanel() {
+		StackViewContainer result = null;
+		for(int i=0; i<layoutHolder.getChildCount(); i++){
+			StackViewContainer child = (StackViewContainer) layoutHolder.getChildAt(i);
+			if(((StackLayoutParams)child.getLayoutParams()).isUnAnchored()){
+				result = child;
+				break;
+			}
+		}
+		return result;
+	}
+
 	public void animViewLayout(final int i, int delta, int velocity) {
 		final View view = layoutHolder.getChildAt(i);
 		final StackLayoutParams lp = (StackLayoutParams) view.getLayoutParams();

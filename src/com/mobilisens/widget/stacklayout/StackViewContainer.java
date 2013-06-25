@@ -15,6 +15,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.MeasureSpec;
+import android.view.ViewParent;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
@@ -188,7 +189,7 @@ public class StackViewContainer extends LinearLayout {
         		StackViewContainer underView = (StackViewContainer) ((StackLayout) getParent()).getChildAt(indexInParent-1);
         		StackLayoutParams underParams = (StackLayoutParams)underView.getLayoutParams();
         		int underViewPos = underParams.getContentViewPos();
-        		Log.i(LOG_TAG, "underViewPos "+underViewPos);
+        		if(DEBUG)Log.i(LOG_TAG, "underViewPos "+underViewPos);
 				int underWidth = underView.getMeasuredWidth()-underParams.getDecorViewWidth();
 				params.setContentViewPos((int) (underViewPos+(underWidth*1.7f/3.f)));
 				params.initAnchors(new int[]{underViewPos,underViewPos+underWidth});
@@ -277,7 +278,10 @@ public class StackViewContainer extends LinearLayout {
 	}
 
 	private boolean hasUpperView() {
-		int nbChild = ((StackLayout) getParent()).getChildCount();
+		ViewParent parent = getParent();
+		if(parent==null)
+			return false;
+		int nbChild = ((StackLayout) parent).getChildCount();
 		return (indexInParent<nbChild-1);
 	}
 
@@ -329,17 +333,22 @@ public class StackViewContainer extends LinearLayout {
 			@Override
 			public void onAnimationUpdate(ValueAnimator animation) {
 				//part for stoping animation if view is deleted during animation
-				int count = ((StackLayout)getParent()).getChildCount();
+				ViewParent parent = getParent();
+				if(parent==null){
+					animator.cancel();
+					return;
+				}
+				int count = ((StackLayout)parent).getChildCount();
 				if(indexInParent>count-1){
 					animator.cancel();
 					return;
 				}
-				View currentViewAtPosI = ((StackLayout)getParent()).getChildAt(indexInParent);
+				View currentViewAtPosI = ((StackLayout)parent).getChildAt(indexInParent);
 				if(currentViewAtPosI!= StackViewContainer.this){
 					animator.cancel();
 					return;
 				}
-				((StackLayout)getParent()).updateViewLayout(StackViewContainer.this, params);
+				((StackLayout)parent).updateViewLayout(StackViewContainer.this, params);
 			}
 		});
 		animator.addListener(new AnimatorListener() {

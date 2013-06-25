@@ -26,7 +26,7 @@ import android.widget.ProgressBar;
 
 public class StackLayout extends ViewGroup{
 	
-	private final boolean DEBUG = false;
+	private final static boolean DEBUG = false;
 	private final String TAG = getClass().getSimpleName();
 
 	private TouchController touchController;
@@ -142,17 +142,6 @@ public class StackLayout extends ViewGroup{
 		return finalCount;
 	}
 
-    private void addStackViewContainer(StackViewContainer stackViewContainer, StackLayoutParams params, int index) {
-    	stackViewContainer.setIndexInParent(index);
-    	StackLayoutParams containerParams = buildStackViewContainerLayoutParams(stackViewContainer, params);
-
-		super.addView(stackViewContainer, index, containerParams);
-		
-		if(getChildCount()!=0){
-			stackViewContainer.setAnimation(addChildAnimationController.getAnimationForView(stackViewContainer));
-		}
-	}
-
 
 	private void addViewInStackViewContainer(View viewToAdd, View decorView, int index, LayoutParams params) {
 		StackViewContainer viewContainer = buildViewContainer(params);
@@ -166,6 +155,18 @@ public class StackLayout extends ViewGroup{
 		viewContainer.setLayoutParams(containerLayoutParams);
 		return viewContainer;
 	}
+	
+    private void addStackViewContainer(StackViewContainer stackViewContainer, StackLayoutParams params, int index) {
+    	stackViewContainer.setIndexInParent(index);
+    	StackLayoutParams containerParams = buildStackViewContainerLayoutParams(stackViewContainer, params);
+
+		super.addView(stackViewContainer, index, containerParams);
+		
+		if(getChildCount()!=0){
+			stackViewContainer.setAnimation(addChildAnimationController.getAnimationForView(stackViewContainer));
+		}
+	}
+
 	
 	private StackLayoutParams buildStackViewContainerLayoutParams(StackViewContainer stackViewContainer, StackLayoutParams stackContainerParams) {
 		childAlreadyMeasured=false;
@@ -387,8 +388,13 @@ public class StackLayout extends ViewGroup{
 				}
 
 				contentViewPos -= moveAmount;
+				
 			}
 			return moveAmount;
+		}
+
+		public boolean isUnAnchored() {
+			return getContentViewPos()>getRightAnchor();
 		}
 
 		public void setContentViewPos(int leftPos) {
@@ -454,16 +460,16 @@ public class StackLayout extends ViewGroup{
 		}
 
 		public int getDistanceToNearestAnchor() {
-			Log.i(TAG, "getDistanceToNearestAnchor");
-			int diff = Integer.MAX_VALUE;
+			if(DEBUG)Log.i(TAG, "getDistanceToNearestAnchor");
+			int result = Integer.MAX_VALUE;
 			for(int i=0; i<anchors.length; i++){
 				int value = getContentViewPos()-anchors[i];
-				if(Math.abs(diff)>= Math.abs(value)){
-					diff = value;
+				if(Math.abs(result)>= Math.abs(value)){
+					result = value;
 				}
-				Log.i(TAG, "diff " +diff);
+				if(DEBUG)Log.i(TAG, "DistanceToNearestAnchor " +result);
 			}
-			return diff;
+			return result;
 		}
 		
 	}
