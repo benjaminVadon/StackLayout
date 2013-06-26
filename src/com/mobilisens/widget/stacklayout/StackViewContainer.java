@@ -19,7 +19,7 @@ import android.widget.LinearLayout;
 
 public class StackViewContainer extends LinearLayout {
 
-	private static final long MAX_ANIMATION_DURATION = 400;
+	private static final long MAX_ANIMATION_DURATION = 300;
 	private static final int MIN_VELOCITY_TO_FLING = 300;
 	private final String LOG_TAG = getClass().getSimpleName();
 	private final boolean DEBUG = false;
@@ -322,12 +322,15 @@ public class StackViewContainer extends LinearLayout {
 
 		if(params.fixed)
 			return;
-		
+
+        Log.i(LOG_TAG, "animPanel velocity "+velocity);
 		final ObjectAnimator animator = ObjectAnimator.ofInt(params, "contentViewPos", params.getContentViewPos()-moveAmount);
 		if(velocity!=0){
 	        velocity = Math.abs(velocity);
 	        long duration = Math.round(1000 * Math.abs((float)moveAmount / velocity));
+	        Log.i(LOG_TAG, " duration "+duration);
 			duration = Math.min(duration, MAX_ANIMATION_DURATION);
+	        Log.i(LOG_TAG, "min duration "+duration);
 			animator.setDuration(duration);
 		}
 		animator.addUpdateListener(new AnimatorUpdateListener() {

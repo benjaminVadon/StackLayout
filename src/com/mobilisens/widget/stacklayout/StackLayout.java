@@ -27,6 +27,8 @@ public class StackLayout extends ViewGroup{
 	private static final LayoutAnimationController addChildAnimationController;
 	private static final LayoutAnimationController removeChildAnimationController;
 
+	private static final int MIN_VELOCITY_TO_JUMP = 2000;
+	
 	static {
         AnimationSet set = new AnimationSet(true);
 
@@ -382,6 +384,11 @@ public class StackLayout extends ViewGroup{
 			return true;
 		}
 
+		//used by objectAnimator for anim panel
+		public void setContentViewPos(int pos){
+			contentViewPos = pos;
+		}
+		
 		public int getContentViewPos(){
 			return contentViewPos;
 		}
@@ -449,32 +456,36 @@ public class StackLayout extends ViewGroup{
 		public int getDistanceToNearestAnchor(int velocity) {
 			int anchor;
 			if(velocity>0){
-				anchor = getNextAnchor();
+				anchor = getNextAnchor(velocity);
 			}else{
-				anchor = getPreviousAnchor();
+				anchor = getPreviousAnchor(velocity);
 			}
 			
 			return getContentViewPos()-anchor;
 		}
 
-		private int getNextAnchor() {
+		private int getNextAnchor(int velocity) {
 			int result = getRightAnchor();
-			for(int i=anchors.length-1; i>=0; i--){
-				if( anchors[i]<getContentViewPos())
-					break;
-				else
-					result = anchors[i];
+			if(!(Math.abs(velocity)>MIN_VELOCITY_TO_JUMP)){
+				for(int i=anchors.length-1; i>=0; i--){
+					if( anchors[i]<getContentViewPos())
+						break;
+					else
+						result = anchors[i];
+				}
 			}
 			return result;
 		}
 
-		private int getPreviousAnchor() {
+		private int getPreviousAnchor(int velocity) {
 			int result = getLeftAnchor();
-			for(int i=0; i<anchors.length; i++){
-				if( anchors[i]>getContentViewPos())
-					break;
-				else
-					result = anchors[i];
+			if(!(Math.abs(velocity)>MIN_VELOCITY_TO_JUMP)){
+				for(int i=0; i<anchors.length; i++){
+					if( anchors[i]>getContentViewPos())
+						break;
+					else
+						result = anchors[i];
+				}
 			}
 			return result;
 		}
