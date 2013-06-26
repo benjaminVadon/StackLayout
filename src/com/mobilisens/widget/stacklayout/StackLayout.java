@@ -19,7 +19,7 @@ import android.view.animation.TranslateAnimation;
 public class StackLayout extends ViewGroup{
 	
 	private final static boolean DEBUG = false;
-	private final String TAG = getClass().getSimpleName();
+	private final String LOG_TAG = getClass().getSimpleName();
 
 	private TouchController touchController;
 	private MoveController moveController;
@@ -92,7 +92,7 @@ public class StackLayout extends ViewGroup{
 	
 	public void addView(View viewToAdd, View decorView, int index, android.view.ViewGroup.LayoutParams params) {
 		if(viewToAdd==null){
-			Log.e(TAG, "You need to provide at least a content view");
+			Log.e(LOG_TAG, "You need to provide at least a content view");
 			return;
 		}
 		int count = getChildCount();
@@ -101,7 +101,7 @@ public class StackLayout extends ViewGroup{
 		
 		if(viewToAdd instanceof StackViewContainer){
 			if(decorView!=null){
-				Log.e(TAG, "Your decorView won't be used because you already provide a StackViewContainer");
+				Log.e(LOG_TAG, "Your decorView won't be used because you already provide a StackViewContainer");
 			}
 			addStackViewContainer((StackViewContainer)viewToAdd, generateLayoutParams(params), index);
 		}else{
@@ -184,7 +184,9 @@ public class StackLayout extends ViewGroup{
     
 	@Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int count = getChildCount();
+
+		if(DEBUG){Log.i(LOG_TAG, "onMeasure ");}
+		int count = getChildCount();
 
         int maxHeight = getSuggestedMinimumHeight();
         int maxWidth = getSuggestedMinimumWidth();
@@ -237,7 +239,7 @@ public class StackLayout extends ViewGroup{
 	
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
-    	if(DEBUG)Log.i(TAG, "onInterceptTouchEvent "+event.toString());
+    	if(DEBUG)Log.i(LOG_TAG, "onInterceptTouchEvent "+event.toString());
 		if (getChildCount()>0) {
 			boolean result = touchController.onInterceptTouchEvent(event);
 			if(result){
@@ -251,7 +253,7 @@ public class StackLayout extends ViewGroup{
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-    	if(DEBUG){Log.i(TAG, "onTouchEvent");}
+    	if(DEBUG){Log.i(LOG_TAG, "onTouchEvent");}
 		if (getChildCount()>0) {
 			return touchController.onTouchEvent(event);
 		}
