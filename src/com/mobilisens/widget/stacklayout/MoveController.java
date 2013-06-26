@@ -27,13 +27,12 @@ public class MoveController implements OnMoveListener {
 	
 	@Override
 	public void onMove(int moveAmount) {
-    	if(DEBUG)Log.i(TAG, "onMove "+moveAmount);
+    	if(DEBUG){Log.i(TAG, "onMove "+moveAmount);}
 		int upperChild = getUpperChild();
 		if(upperChild<0)
 			return;
 		int viewReferenceIndex = getViewIndexTouchReference(upperChild);
 		((StackViewContainer) layoutHolder.getChildAt(viewReferenceIndex)).movePanel(moveAmount);
-
 	}
 
 	private int getUpperChild() {
@@ -74,7 +73,6 @@ public class MoveController implements OnMoveListener {
 		currentInterceptedTouchedView = NO_CHILD_TOUCHED;
 	}
 
-	
 	private StackViewContainer getUnAnchoredPanel() {
 		StackViewContainer result = null;
 		for(int i=0; i<layoutHolder.getChildCount(); i++){
@@ -108,13 +106,11 @@ public class MoveController implements OnMoveListener {
 		return NO_CHILD_TOUCHED;
 	}
 	
-	
 	private boolean isTransformedTouchPointInView(int x, int y, StackViewContainer child) {
         final Rect frame = new Rect();
         child.getHitRect(frame);
         return frame.contains(x, y);
 	}
-	
 	
 	private int getCurrentPointerIndex(MotionEvent event){
 		int activePointerId = layoutHolder.getActivePointerId();

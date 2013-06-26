@@ -6,11 +6,9 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
@@ -25,10 +23,6 @@ public class StackLayout extends ViewGroup{
 
 	private TouchController touchController;
 	private MoveController moveController;
-//	private boolean childAlreadyMeasured =false;
-	private int deviceWidth;
-	private int deviveHeight;
-	
 
 	private static final LayoutAnimationController addChildAnimationController;
 	private static final LayoutAnimationController removeChildAnimationController;
@@ -84,13 +78,7 @@ public class StackLayout extends ViewGroup{
 		if(id==View.NO_ID){
 			setId(R.id.stackLayout);
 		}
-		WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-		Display display = wm.getDefaultDisplay();
-		deviceWidth = display.getWidth(); 
-		deviveHeight = display.getHeight();
-
 	}
-
 
 	@Override
 	public void addView(View viewToAdd, int index, android.view.ViewGroup.LayoutParams params) {
@@ -210,7 +198,7 @@ public class StackLayout extends ViewGroup{
             if (lp.width == StackLayoutParams.MATCH_PARENT) {
             	int childWidth = getMeasuredWidth();
             	if(lp.bestWidthFromParent){
-            		childWidth = (deviceWidth<deviveHeight)?deviceWidth:deviveHeight;
+            		childWidth = (getMeasuredWidth()<getMeasuredHeight())?getMeasuredWidth():getMeasuredHeight();
             		childWidth = (int) ((childWidth * 2.) /3.);
             	}
         		childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidth, MeasureSpec.EXACTLY);
@@ -261,7 +249,7 @@ public class StackLayout extends ViewGroup{
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-    	if(DEBUG)Log.i(TAG, "onTouchEvent");
+    	if(DEBUG){Log.i(TAG, "onTouchEvent");}
 		if (getChildCount()>0) {
 			return touchController.onTouchEvent(event);
 		}
@@ -361,7 +349,7 @@ public class StackLayout extends ViewGroup{
 			
 		}
 
-		public void initAnchors(String anchorsString) {
+		private void initAnchors(String anchorsString) {
 			String[] anchorsStringList = anchorsString.split(";");
 			anchorsRef = new float[anchorsStringList.length];
 			anchors = new int[anchorsStringList.length];
@@ -370,7 +358,7 @@ public class StackLayout extends ViewGroup{
 			}
 		}
 
-		public void initAnchorIndexForOpen(int anchorIndexForOpen){
+		private void initAnchorIndexForOpen(int anchorIndexForOpen){
 			this.anchorIndexForOpen = anchorIndexForOpen;
 		}
 		
@@ -394,10 +382,6 @@ public class StackLayout extends ViewGroup{
 			return true;
 		}
 
-		public void setContentViewPos(int leftPos) {
-			contentViewPos = leftPos;
-		}
-		
 		public int getContentViewPos(){
 			return contentViewPos;
 		}
@@ -446,14 +430,14 @@ public class StackLayout extends ViewGroup{
 		}
 
 		public int getDistanceToNearestAnchor() {
-			if(DEBUG)Log.i(TAG, "getDistanceToNearestAnchor");
+			if(DEBUG){Log.i(TAG, "getDistanceToNearestAnchor");}
 			int result = Integer.MAX_VALUE;
 			for(int i=0; i<anchors.length; i++){
 				int value = getContentViewPos()-anchors[i];
 				if(Math.abs(result)>= Math.abs(value)){
 					result = value;
 				}
-				if(DEBUG)Log.i(TAG, "DistanceToNearestAnchor " +result);
+				if(DEBUG){Log.i(TAG, "DistanceToNearestAnchor " +result);}
 			}
 			return result;
 		}
@@ -508,9 +492,9 @@ public class StackLayout extends ViewGroup{
 
 		private void buildContentViewPos() {
 			if(anchorIndexForOpenIsSet()){
-				setContentViewPos(anchors[anchorIndexForOpen]);
+				contentViewPos = anchors[anchorIndexForOpen];
 			}else{
-				setContentViewPos(underPos+underWidth);
+				contentViewPos = underPos+underWidth;
 			}
 		}
 
@@ -531,9 +515,5 @@ public class StackLayout extends ViewGroup{
 			else
 				return false;
 		}
-		
-//		public int getAnchorIndexForOpen(){
-//			return anchorIndexForOpen;
-//		}
 	}
 }

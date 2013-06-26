@@ -170,7 +170,7 @@ public class StackViewContainer extends LinearLayout {
 			
 		if(!params.isViewPosSet()){
 
-			if(DEBUG)Log.i(LOG_TAG, "setLayoutParamsViewPos for view index "+indexInParent);
+			if(DEBUG){Log.i(LOG_TAG, "setLayoutParamsViewPos for view index "+indexInParent);}
     		
 			if(decorViewIsPresent()){
 				int decorWidth = decorView.getMeasuredWidth();
@@ -179,19 +179,15 @@ public class StackViewContainer extends LinearLayout {
 
         	if(indexInParent==0){
         		int underPos = ((StackLayout) getParent()).getLeft();
-//        		params.setContentViewPos(underPos);
 				params.setUnderPos(underPos);
-//        		params.initAnchors(new int[]{underPos});
         	}else{
         		StackViewContainer underView = (StackViewContainer) ((StackLayout) getParent()).getChildAt(indexInParent-1);
         		StackLayoutParams underParams = (StackLayoutParams)underView.getLayoutParams();
         		int underViewPos = underParams.getContentViewPos();
-        		if(DEBUG)Log.i(LOG_TAG, "underViewPos "+underViewPos);
+        		if(DEBUG){Log.i(LOG_TAG, "underViewPos "+underViewPos);}
 				int underWidth = underView.getMeasuredWidth()-underParams.getDecorViewWidth();
 				
-//				params.setContentViewPos(underViewPos+underWidth);
 				params.setUnderPosAndWidth(underViewPos, underWidth);
-//				params.initAnchors(new int[]{underViewPos, (int) (underViewPos+(underWidth*1.7f/3.f)), underViewPos+underWidth});
         	}
 
 			
@@ -205,7 +201,7 @@ public class StackViewContainer extends LinearLayout {
 	}
 	
 	public void movePanel(int moveAmount){
-		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" movePanel");
+		if(DEBUG){Log.i(LOG_TAG, "index "+indexInParent +" movePanel");}
 		StackLayoutParams params = (StackLayoutParams) getLayoutParams();
 		if(!params.fixed){
 			boolean hasUpperView = hasUpperView();
@@ -222,12 +218,12 @@ public class StackViewContainer extends LinearLayout {
 	}
 	
 	private void updateUpperPanelAnchors(StackLayoutParams params) {
-		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" updateUpperPanelAnchors");
+		if(DEBUG){Log.i(LOG_TAG, "index "+indexInParent +" updateUpperPanelAnchors");}
 		((StackLayoutParams)(((StackLayout)getParent()).getChildAt(indexInParent+1)).getLayoutParams()).updateUnderPos(params.getContentViewPos());
 	}
 
 	private void moveOtherPanels(int moveAmount, StackLayoutParams params) {
-		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +"moveOtherPanels");
+		if(DEBUG){Log.i(LOG_TAG, "index "+indexInParent +"moveOtherPanels");}
 		if(hasUpperView()){
 			moveUpperPanel(moveAmount);
 		}
@@ -238,7 +234,7 @@ public class StackViewContainer extends LinearLayout {
 
 
 	private void moveUpperPanel(int moveAmount) {
-		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" moveUpperPanel");
+		if(DEBUG){Log.i(LOG_TAG, "index "+indexInParent +" moveUpperPanel");}
 		StackLayout parent = (StackLayout) getParent();
 		StackViewContainer upperPanel = ((StackViewContainer)parent.getChildAt(indexInParent+1));
 		if(!upperPanel.isMoving){
@@ -257,13 +253,13 @@ public class StackViewContainer extends LinearLayout {
 	}
 
 	private void moveUnderPanel(int moveAmount, StackLayoutParams params) {
-		if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" moveUnderPanel");
+		if(DEBUG){Log.i(LOG_TAG, "index "+indexInParent +" moveUnderPanel");}
 		StackLayout parent = (StackLayout) getParent();
 		StackViewContainer underPanel = ((StackViewContainer)parent.getChildAt(indexInParent-1));
 		if(!underPanel.isMoving){
-			if(DEBUG)Log.i(LOG_TAG, "index "+indexInParent +" moveAmount before "+moveAmount);
+			if(DEBUG){Log.i(LOG_TAG, "index "+indexInParent +" moveAmount before "+moveAmount);}
 			moveAmount = underPanel.shouldMoveFromUpper(moveAmount, params);
-			if(DEBUG)Log.i(LOG_TAG, "\tmoveAmount after "+moveAmount);
+			if(DEBUG){Log.i(LOG_TAG, "\tmoveAmount after "+moveAmount);}
 			if(moveAmount!=0){
 				underPanel.movePanel(moveAmount);
 			}
