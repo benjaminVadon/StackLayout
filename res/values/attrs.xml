@@ -11,7 +11,7 @@
 	        <flag name="right" value="0x05" />
          </attr>
         <attr name="anchorsList" format="string"/>
-         
+        <attr name="anchor_index_for_open" format="integer"/>
     </declare-styleable>
 
 </resources>

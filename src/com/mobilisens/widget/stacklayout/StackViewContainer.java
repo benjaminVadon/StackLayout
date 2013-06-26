@@ -179,7 +179,7 @@ public class StackViewContainer extends LinearLayout {
 
         	if(indexInParent==0){
         		int underPos = ((StackLayout) getParent()).getLeft();
-        		params.setContentViewPos(underPos);
+//        		params.setContentViewPos(underPos);
 				params.setUnderPos(underPos);
 //        		params.initAnchors(new int[]{underPos});
         	}else{
@@ -189,7 +189,7 @@ public class StackViewContainer extends LinearLayout {
         		if(DEBUG)Log.i(LOG_TAG, "underViewPos "+underViewPos);
 				int underWidth = underView.getMeasuredWidth()-underParams.getDecorViewWidth();
 				
-				params.setContentViewPos(underViewPos+underWidth);
+//				params.setContentViewPos(underViewPos+underWidth);
 				params.setUnderPosAndWidth(underViewPos, underWidth);
 //				params.initAnchors(new int[]{underViewPos, (int) (underViewPos+(underWidth*1.7f/3.f)), underViewPos+underWidth});
         	}

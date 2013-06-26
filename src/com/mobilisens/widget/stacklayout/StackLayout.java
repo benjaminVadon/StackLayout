@@ -297,6 +297,12 @@ public class StackLayout extends ViewGroup{
 		params.initAnchors(anchorsString);
 		return params;
 	}
+
+	public StackLayoutParams generateLayoutParams(boolean fixed, boolean bestWidthFromParent, String anchorsString, int anchorIndexForOpen) {
+		StackLayoutParams params = generateLayoutParams(fixed, bestWidthFromParent, anchorsString);
+		params.initAnchorIndexForOpen(anchorIndexForOpen);
+		return params;
+	}
 	
 	@Override
 	public StackLayoutParams generateLayoutParams(AttributeSet attrs) {
@@ -317,17 +323,18 @@ public class StackLayout extends ViewGroup{
 		
 		private final String TAG = getClass().getSimpleName();
 		private static final int POS_NOT_SET = Integer.MIN_VALUE;
+		
 		boolean bestWidthFromParent = false;
 		boolean fixed = false;
 		int needShadow = 0;
-		
-		
-		private int contentViewPos = POS_NOT_SET;
 		private int[] anchors = new int[1];
 		private float[] anchorsRef = new float[]{0.f};
-		private int decorViewWidth = 0;
+		private int anchorIndexForOpen = -1;
+		
+		private int contentViewPos = POS_NOT_SET;
 		private int underPos;
 		private int underWidth;
+		private int decorViewWidth = 0;
 		
 		
 		public StackLayoutParams(int w, int h) {
@@ -346,6 +353,8 @@ public class StackLayout extends ViewGroup{
 				if(anchorsString!=null && !anchorsString.isEmpty()){
 					initAnchors(anchorsString);
 				}
+				anchorIndexForOpen = a.getInt(R.styleable.StackLayoutParams_anchor_index_for_open, -1);
+				
 			} finally {
 				a.recycle();
 			}
@@ -361,6 +370,10 @@ public class StackLayout extends ViewGroup{
 			}
 		}
 
+		public void initAnchorIndexForOpen(int anchorIndexForOpen){
+			this.anchorIndexForOpen = anchorIndexForOpen;
+		}
+		
 		public void changeContentViewPos(int moveAmount, boolean hasUpperChild) {
 			if(contentViewPos!=POS_NOT_SET){
 				if(hasUpperChild){
@@ -490,6 +503,15 @@ public class StackLayout extends ViewGroup{
 			this.underPos = underPos;
 			this.underWidth = underWidth;
 			resetAnchors();
+			buildContentViewPos();
+		}
+
+		private void buildContentViewPos() {
+			if(anchorIndexForOpenIsSet()){
+				setContentViewPos(anchors[anchorIndexForOpen]);
+			}else{
+				setContentViewPos(underPos+underWidth);
+			}
 		}
 
 		public void updateUnderPos(int underPos){
@@ -502,5 +524,16 @@ public class StackLayout extends ViewGroup{
 				anchors[i]=(int)(anchorsRef[i]*underWidth)+underPos;
 			}
 		}
+		
+		public boolean anchorIndexForOpenIsSet(){
+			if(anchorIndexForOpen!=-1 && anchorIndexForOpen<anchorsRef.length)
+				return true;
+			else
+				return false;
+		}
+		
+//		public int getAnchorIndexForOpen(){
+//			return anchorIndexForOpen;
+//		}
 	}
 }
