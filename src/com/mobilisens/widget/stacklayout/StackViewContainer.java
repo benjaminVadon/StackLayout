@@ -153,29 +153,24 @@ public class StackViewContainer extends LinearLayout {
 	
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		if(!measureForMovement){
-			if(DEBUG){Log.i(LOG_TAG, "onMeasure indexInParent "+indexInParent);}
-			super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-			contentView.measure(widthMeasureSpec, heightMeasureSpec);
-	
-			if(decorViewIsPresent()){
-				widthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec)+decorView.getMeasuredWidth(), MeasureSpec.EXACTLY);
-			}
-			
-			setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
-			
-			setLayoutParamsViewPos();
-		}
+		if(DEBUG){Log.i(LOG_TAG, "onMeasure indexInParent "+indexInParent);}
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+		contentView.measure(widthMeasureSpec, heightMeasureSpec);
 
+		if(decorViewIsPresent()){
+			widthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec)+decorView.getMeasuredWidth(), MeasureSpec.EXACTLY);
+		}
+		
 		setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
-		measureForMovement = false;
+		
+		setLayoutParamsViewPos();
 	}
 	
 	
 	private void setLayoutParamsViewPos() {
 		StackLayoutParams params = (StackLayoutParams) getLayoutParams();
 			
-		if(!params.isViewPosSet()){
+		if(!params.isViewPosSet() || ((StackLayout)getParent()).childrenNeedPosClean()){
 
 			if(DEBUG){Log.i(LOG_TAG, "setLayoutParamsViewPos for view index "+indexInParent);}
     		

@@ -23,6 +23,8 @@ public class StackLayout extends ViewGroup{
 
 	private TouchController touchController;
 	private MoveController moveController;
+	private boolean childrenNeedPosClean = false;
+	private int parentWidth = 0;
 
 	private static final LayoutAnimationController addChildAnimationController;
 	private static final LayoutAnimationController removeChildAnimationController;
@@ -203,6 +205,10 @@ public class StackLayout extends ViewGroup{
             	int childWidth = getMeasuredWidth();
             	if(lp.bestWidthFromParent){
             		childWidth = (getMeasuredWidth()<getMeasuredHeight())?getMeasuredWidth():getMeasuredHeight();
+            		if(childWidth!=parentWidth){
+            			parentWidth = childWidth;
+            			childrenNeedPosClean = true;
+            		}
             		childWidth = (int) ((childWidth * 2.) /3.);
             	}
         		childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidth, MeasureSpec.EXACTLY);
@@ -215,7 +221,13 @@ public class StackLayout extends ViewGroup{
             child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
             
         }
+        childrenNeedPosClean = false;
     }
+	
+	public boolean childrenNeedPosClean(){
+		return childrenNeedPosClean;
+	}
+	
 	
 	@Override
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
