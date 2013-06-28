@@ -1,7 +1,5 @@
 package com.mobilisens.widget.stacklayout;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.mobilisens.widget.stacklayout.StackLayout.StackLayoutParams;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.Animator.AnimatorListener;
