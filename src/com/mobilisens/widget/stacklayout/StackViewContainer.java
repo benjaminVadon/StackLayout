@@ -1,5 +1,7 @@
 package com.mobilisens.widget.stacklayout;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.mobilisens.widget.stacklayout.StackLayout.StackLayoutParams;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.Animator.AnimatorListener;
@@ -70,15 +72,9 @@ public class StackViewContainer extends LinearLayout {
 	private void addContentView(View viewToAdd) {
 		contentView = viewToAdd;
 		LayoutParams contentParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-		buildContentId();
 		addView(viewToAdd, contentParams);
 	}
 
-	private void buildContentId() {
-		if(contentView.getId() == View.NO_ID){
-			contentView.setId(generateViewId());
-		}
-	}
 
 	private void addDecorView(View decorViewToAdd) {
 		decorView = decorViewToAdd;
