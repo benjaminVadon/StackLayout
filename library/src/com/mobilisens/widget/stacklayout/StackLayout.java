@@ -357,7 +357,7 @@ public class StackLayout extends ViewGroup{
 				
 				needShadow = a.getInt(R.styleable.StackLayoutParams_need_shadow, 0);
 				String anchorsString = a.getString(R.styleable.StackLayoutParams_anchorsList);
-				if(anchorsString!=null && !anchorsString.isEmpty()){
+				if(anchorsString!=null && anchorsString.length()!=0){
 					initAnchors(anchorsString);
 				}
 				anchorIndexForOpen = a.getInt(R.styleable.StackLayoutParams_anchor_index_for_open, -1);
