@@ -35,11 +35,6 @@ public class StackViewContainer extends LinearLayout {
         initStackViewContainer();
     }
 
-	public StackViewContainer(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
-        initStackViewContainer();
-	}
-
 	private void initStackViewContainer() {
 		addGlobalEventCatcher();
 	}

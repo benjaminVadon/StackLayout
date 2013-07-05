@@ -2,7 +2,8 @@
 <com.mobilisens.widget.stacklayout.StackLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent" 
-	android:id="@+id/stackLayout" >
+	android:id="@+id/stackLayout"
+	android:background="@android:color/darker_gray">
     <include layout="@layout/configurator_panel"
 		android:id="@+id/firstChild"/>
 </com.mobilisens.widget.stacklayout.StackLayout>
