@@ -155,6 +155,7 @@ public class StackLayout extends ViewGroup{
 		if(nbChildBeforeAdd!=0){
 
 			if(nbChildBeforeAdd>0){
+				final StackViewContainer underView = ((StackViewContainer)getChildAt(nbChildBeforeAdd-1));
 				Animation animation = addChildAnimationController.getAnimation();
 				animation.setAnimationListener(new AnimationListener() {
 					@Override
@@ -167,7 +168,9 @@ public class StackLayout extends ViewGroup{
 					
 					@Override
 					public void onAnimationEnd(Animation animation) {
-						((StackViewContainer)getChildAt(nbChildBeforeAdd-1)).animToLeftAnchor();
+						if(underView!=null && underView.getParent()!=null){
+							underView.animToLeftAnchor();
+						}
 						animation.setAnimationListener(null);
 					}
 				});
