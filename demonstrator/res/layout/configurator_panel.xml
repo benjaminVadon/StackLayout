@@ -8,9 +8,9 @@
     android:background="@android:color/background_light">
 
     <TextView
+        android:id="@+id/nbChildInfo"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Number of child" />
+        android:layout_height="wrap_content" />
 
     <SeekBar
         android:id="@+id/nbChild"

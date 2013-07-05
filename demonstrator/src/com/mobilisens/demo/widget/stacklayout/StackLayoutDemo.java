@@ -17,6 +17,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
 
 public class StackLayoutDemo extends Activity{
 
@@ -26,6 +27,7 @@ public class StackLayoutDemo extends Activity{
 	protected final String LOG_TAG = getClass().getSimpleName();
 	private StackLayout stackLayout;
 	private final int nbBasePanel = 1;
+	private TextView nbChildInfo;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +41,9 @@ public class StackLayoutDemo extends Activity{
 		LinearLayout firstChild = (LinearLayout) findViewById(R.id.firstChild);
 		SeekBar nbChild = (SeekBar) firstChild.findViewById(R.id.nbChild);
 		nbChild.setOnSeekBarChangeListener(nbChildChangeListener);
+		
+		nbChildInfo = (TextView) firstChild.findViewById(R.id.nbChildInfo);
+		nbChildInfo.setText(getString(R.string.configurator_nbChild, 0));
 	}
 
 	private OnSeekBarChangeListener nbChildChangeListener = new OnSeekBarChangeListener() {
@@ -69,6 +74,7 @@ public class StackLayoutDemo extends Activity{
 					removePanelToStackLayout();
 				}
 			}
+			nbChildInfo.setText(getString(R.string.configurator_nbChild, progress));
 		}
 	};
 	

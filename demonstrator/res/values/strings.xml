@@ -2,5 +2,7 @@
 <resources>
 
     <string name="app_name">StackLayout Demo</string>
+    
+    <string name="configurator_nbChild">Number of child : %d</string>
 
 </resources>
