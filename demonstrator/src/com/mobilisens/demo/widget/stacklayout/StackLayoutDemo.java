@@ -2,32 +2,36 @@ package com.mobilisens.demo.widget.stacklayout;
 
 import com.mobilisens.widget.stacklayout.StackLayout;
 import com.mobilisens.widget.stacklayout.StackLayout.StackLayoutParams;
-import com.mobilisens.widget.stacklayout.StackViewContainer;
 
 import android.app.Activity;
-import android.database.DataSetObserver;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
-import android.widget.ListAdapter;
+import android.widget.EdgeEffect;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 
 public class StackLayoutDemo extends Activity{
 
 	
 
 	private static final int NB_IN_LIST = 100;
+	private static final String DEFAULT_MAX_CHILD = "5";
 	protected final String LOG_TAG = getClass().getSimpleName();
 	private StackLayout stackLayout;
 	private final int nbBasePanel = 1;
 	private TextView nbChildInfo;
+	private SeekBar nbChild;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -38,46 +42,70 @@ public class StackLayoutDemo extends Activity{
 	}
 
 	private void initFirstPanel() {
-		LinearLayout firstChild = (LinearLayout) findViewById(R.id.firstChild);
-		SeekBar nbChild = (SeekBar) firstChild.findViewById(R.id.nbChild);
-		nbChild.setOnSeekBarChangeListener(nbChildChangeListener);
+		setNbChildLogic();
 		
-		nbChildInfo = (TextView) firstChild.findViewById(R.id.nbChildInfo);
+		nbChildInfo = (TextView) findViewById(R.id.nbChildInfo);
 		nbChildInfo.setText(getString(R.string.configurator_nbChild, 0));
+		
+		setMaxChildLogic();
 	}
 
-	private OnSeekBarChangeListener nbChildChangeListener = new OnSeekBarChangeListener() {
-		
+	private void setNbChildLogic() {
+		nbChild = (SeekBar) findViewById(R.id.nbChild);
 
-		@Override
-		public void onStopTrackingTouch(SeekBar seekBar) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-		@Override
-		public void onStartTrackingTouch(SeekBar seekBar) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-		@Override
-		public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-			int currentNbChild = stackLayout.getChildCount()-nbBasePanel;
-//			Log.i(LOG_TAG, "onProgressChanged currentNbChild "+currentNbChild+" progress "+progress);
-			if(progress>currentNbChild){
-				for (int i = currentNbChild; i <= progress; i++) {
-					addPanelToStackLayout();
-				}
-			}else if(progress<currentNbChild){
-				for (int i = currentNbChild; i > progress; i--) {
-					removePanelToStackLayout();
-				}
+		OnSeekBarChangeListener nbChildChangeListener = new OnSeekBarChangeListener() {
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
 			}
-			nbChildInfo.setText(getString(R.string.configurator_nbChild, progress));
-		}
-	};
+			
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+			}
+			
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				int currentNbChild = stackLayout.getChildCount()-nbBasePanel;
+				if(progress>currentNbChild){
+					for (int i = currentNbChild; i < progress; i++) {
+						addPanelToStackLayout();
+					}
+				}else if(progress<currentNbChild){
+					for (int i = currentNbChild; i > progress; i--) {
+						removePanelToStackLayout();
+					}
+				}
+				nbChildInfo.setText(getString(R.string.configurator_nbChild, progress));
+			}
+		};
+		nbChild.setOnSeekBarChangeListener(nbChildChangeListener);
+	}
+
+	private void setMaxChildLogic() {
+		EditText maxChild = (EditText)findViewById(R.id.maxChild);
+		OnEditorActionListener maxChildChangeListener = new OnEditorActionListener() {
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+				boolean handled = false;
+		        if (actionId == EditorInfo.IME_ACTION_GO 
+		        || actionId == EditorInfo.IME_ACTION_DONE) {
+		        	String value = v.getText().toString();
+		        	if(value.length()!=0){
+		        		nbChild.setMax(Integer.valueOf(value));
+		        	}else{
+		        		nbChild.setMax(100);
+		        	}
+		            handled = true;
+		        }
+		        return handled;
+			}
+		};
+		maxChild.setOnEditorActionListener(maxChildChangeListener);//addTextChangedListener(maxChildChangeWatcher);
+		maxChild.setText(DEFAULT_MAX_CHILD);
+		maxChild.onEditorAction(EditorInfo.IME_ACTION_DONE);
+	}
+
 	
+
 
 	private void addPanelToStackLayout() {
 		int index = stackLayout.getChildCount();
@@ -101,7 +129,6 @@ public class StackLayoutDemo extends Activity{
 			objects[i] = "element "+i;
 		}
 		list.setAdapter(new ArrayAdapter<String>(getApplicationContext(), R.layout.standard_row, R.id.textContent, objects));
-		
 		return list;
 	}
 

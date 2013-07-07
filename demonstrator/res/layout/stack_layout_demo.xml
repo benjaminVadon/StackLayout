@@ -5,5 +5,7 @@
 	android:id="@+id/stackLayout"
 	android:background="@android:color/darker_gray">
     <include layout="@layout/configurator_panel"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
 		android:id="@+id/firstChild"/>
 </com.mobilisens.widget.stacklayout.StackLayout>
