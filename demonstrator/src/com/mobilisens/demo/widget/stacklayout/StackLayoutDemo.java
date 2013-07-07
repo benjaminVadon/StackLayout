@@ -1,19 +1,13 @@
 package com.mobilisens.demo.widget.stacklayout;
 
 import com.mobilisens.widget.stacklayout.StackLayout;
-import com.mobilisens.widget.stacklayout.StackLayout.StackLayoutParams;
-
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
-import android.widget.EdgeEffect;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SeekBar;
