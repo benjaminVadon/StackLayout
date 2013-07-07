@@ -145,12 +145,14 @@ public class StackViewContainer extends LinearLayout {
 		if(DEBUG){Log.i(LOG_TAG, "onMeasure indexInParent "+indexInParent);}
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 		contentView.measure(widthMeasureSpec, heightMeasureSpec);
-
-		if(decorViewIsPresent()){
-			widthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec)+decorView.getMeasuredWidth(), MeasureSpec.EXACTLY);
-		}
 		
-		setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
+		int width = contentView.getMeasuredWidth();
+		if(decorViewIsPresent()){
+			width += decorView.getMeasuredWidth();
+		}
+
+		widthMeasureSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
+		setMeasuredDimension(width, contentView.getMeasuredHeight());
 		
 		setLayoutParamsViewPos();
 	}
