@@ -196,7 +196,7 @@ public class StackViewContainer extends LinearLayout {
 		if(DEBUG){Log.i(LOG_TAG, "index "+indexInParent +" movePanel");}
 		StackLayoutParams params = (StackLayoutParams) getLayoutParams();
 		if(!params.fixed){
-			measureForMovement = true;
+//			measureForMovement = true;
 			isMoving = true;
 			boolean hasUpperView = hasUpperView();
 			params.changeContentViewPos(moveAmount, hasUpperView);
@@ -311,7 +311,7 @@ public class StackViewContainer extends LinearLayout {
 	}
 
 	private void animPanel(final int moveAmount, int velocity) {
-		measureForMovement = true;
+//		measureForMovement = true;
 		final StackLayoutParams params = (StackLayoutParams) getLayoutParams();
 
 		if(params.fixed)
@@ -360,7 +360,7 @@ public class StackViewContainer extends LinearLayout {
 				if(hasUpperView())
 					updateUpperPanelAnchors((StackLayoutParams) getLayoutParams());
 
-				measureForMovement = false;
+//				measureForMovement = false;
 			}
 			@Override
 			public void onAnimationCancel(Animator arg0) {
