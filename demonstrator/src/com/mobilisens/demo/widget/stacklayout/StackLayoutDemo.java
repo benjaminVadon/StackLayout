@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.ToggleButton;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
@@ -55,12 +56,10 @@ public class StackLayoutDemo extends Activity{
 
 		OnSeekBarChangeListener nbChildChangeListener = new OnSeekBarChangeListener() {
 			@Override
-			public void onStopTrackingTouch(SeekBar seekBar) {
-			}
+			public void onStopTrackingTouch(SeekBar seekBar) { }
 			
 			@Override
-			public void onStartTrackingTouch(SeekBar seekBar) {
-			}
+			public void onStartTrackingTouch(SeekBar seekBar) { }
 			
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -96,7 +95,7 @@ public class StackLayoutDemo extends Activity{
 		        return handled;
 			}
 		};
-		maxChild.setOnEditorActionListener(maxChildChangeListener);//addTextChangedListener(maxChildChangeWatcher);
+		maxChild.setOnEditorActionListener(maxChildChangeListener);
 		maxChild.setText(DEFAULT_MAX_CHILD);
 		maxChild.onEditorAction(EditorInfo.IME_ACTION_DONE);
 	}
@@ -133,18 +132,25 @@ public class StackLayoutDemo extends Activity{
 		return new OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-				if(indexInStack<maxNbChild){
-					int currentNbPanels = stackLayout.getChildCount()-1;
-					if(currentNbPanels>indexInStack){
-						nbChild.setProgress(indexInStack);
+				if(isListItemClickable()){
+					if(indexInStack<maxNbChild){
+						int currentNbPanels = stackLayout.getChildCount()-1;
+						if(currentNbPanels>indexInStack){
+							nbChild.setProgress(indexInStack);
+						}
+						nbChild.incrementProgressBy(1);
 					}
-					nbChild.incrementProgressBy(1);
 				}
 			}
 		};
 		
 	}
 
+
+	protected boolean isListItemClickable() {
+		ToggleButton isListItemClickable = (ToggleButton)findViewById(R.id.isListItemClickable);
+		return isListItemClickable.isChecked();
+	}
 
 	private void buildListAdapter() {
 		String[] objects = new String[NB_IN_LIST];
