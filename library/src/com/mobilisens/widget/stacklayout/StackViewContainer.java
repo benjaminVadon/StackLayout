@@ -9,7 +9,6 @@ import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
 
 import android.content.Context;
 import android.graphics.Rect;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -28,7 +27,6 @@ public class StackViewContainer extends LinearLayout {
 	private View decorView;
 	private int indexInParent;
 	private boolean isMoving = false;
-	private boolean measureForMovement;
 
 	public StackViewContainer(Context context) {
         super(context);
@@ -188,6 +186,10 @@ public class StackViewContainer extends LinearLayout {
 
 	public void setIndexInParent(int index){
 		indexInParent = index;
+	}
+	
+	public int getIndexInParent(){
+		return indexInParent;
 	}
 	
 	public void movePanel(int moveAmount){
