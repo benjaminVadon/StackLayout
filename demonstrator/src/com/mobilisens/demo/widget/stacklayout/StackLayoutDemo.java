@@ -1,14 +1,18 @@
 package com.mobilisens.demo.widget.stacklayout;
 
 import com.mobilisens.widget.stacklayout.StackLayout;
+
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -26,6 +30,8 @@ public class StackLayoutDemo extends Activity{
 	private final int nbBasePanel = 1;
 	private TextView nbChildInfo;
 	private SeekBar nbChild;
+	private ListAdapter listAdapter;
+	protected int maxNbChild;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -83,11 +89,8 @@ public class StackLayoutDemo extends Activity{
 		        if (actionId == EditorInfo.IME_ACTION_GO 
 		        || actionId == EditorInfo.IME_ACTION_DONE) {
 		        	String value = v.getText().toString();
-		        	if(value.length()!=0){
-		        		nbChild.setMax(Integer.valueOf(value));
-		        	}else{
-		        		nbChild.setMax(100);
-		        	}
+		        	maxNbChild = (value.length()!=0)? Integer.valueOf(value):100;
+	        		nbChild.setMax(maxNbChild);
 		            handled = true;
 		        }
 		        return handled;
@@ -102,28 +105,53 @@ public class StackLayoutDemo extends Activity{
 
 
 	private void addPanelToStackLayout() {
-		int index = stackLayout.getChildCount();
+		int indexInStack = stackLayout.getChildCount();
 		String anchors;
-		if(index<2){
+		if(indexInStack<2){
 			anchors =  "1.;1.";
 		}else{
 			anchors =  "0.;0.5;1.";
 		}
-		stackLayout.addView(buildSimpleList(), index, stackLayout.generateLayoutParams(false, true, anchors, 1));
+		stackLayout.addView(buildSimpleList(indexInStack), indexInStack, stackLayout.generateLayoutParams(false, true, anchors, 1));
 	}
 
-	private View buildSimpleList() {
+	private View buildSimpleList(final int indexInStack) {
 		ListView list = new ListView(getApplicationContext());
 		int nbPanel = stackLayout.getChildCount()-1;
 		list.setBackgroundColor(Color.GRAY- (0x80808 * nbPanel)%Color.GRAY);
 
+		if(listAdapter==null){
+			buildListAdapter();
+		}
 		
+		list.setAdapter(listAdapter);
+		list.setOnItemClickListener(buildOnItemClickListener(indexInStack));
+		return list;
+	}
+
+	private OnItemClickListener buildOnItemClickListener(final int indexInStack) {
+		return new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				if(indexInStack<maxNbChild){
+					int currentNbPanels = stackLayout.getChildCount()-1;
+					if(currentNbPanels>indexInStack){
+						nbChild.setProgress(indexInStack);
+					}
+					nbChild.incrementProgressBy(1);
+				}
+			}
+		};
+		
+	}
+
+
+	private void buildListAdapter() {
 		String[] objects = new String[NB_IN_LIST];
 		for(int i=0; i<objects.length; i++){
 			objects[i] = "element "+i;
 		}
-		list.setAdapter(new ArrayAdapter<String>(getApplicationContext(), R.layout.standard_row, R.id.textContent, objects));
-		return list;
+		listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.standard_row, R.id.textContent, objects);
 	}
 
 	private void removePanelToStackLayout() {
