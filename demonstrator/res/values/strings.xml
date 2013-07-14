@@ -2,9 +2,11 @@
 <resources>
 
 	<string name="app_name">StackLayout Demo</string>
+	<string name="configurator_title">Application controls</string>
 	<string name="configurator_nbChild">Number of child : %d</string>
 	<string name="configurator_maxChild">Max :</string>
 	<string name="configurator_isListItemClickable">Rows add panel on click</string>
-	<string name="configurator_title_panelControl">Panel build control</string>
+	<string name="configurator_title_panelControl">Panel build controls</string>
+	<string name="configurator_anchors">Anchors</string>
 
 </resources>

@@ -1,3 +1,5 @@
 <resources>
 
+	<color name="configurator_section_background">#cccc</color>
+
 </resources>

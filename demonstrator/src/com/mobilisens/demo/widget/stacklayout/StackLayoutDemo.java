@@ -5,6 +5,7 @@ import com.mobilisens.widget.stacklayout.StackLayout;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -12,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -33,6 +35,7 @@ public class StackLayoutDemo extends Activity{
 	private SeekBar nbChild;
 	private ListAdapter listAdapter;
 	protected int maxNbChild;
+	private LinearLayout anchorsContainer;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +52,10 @@ public class StackLayoutDemo extends Activity{
 		nbChildInfo.setText(getString(R.string.configurator_nbChild, 0));
 		
 		setMaxChildLogic();
+		anchorsContainer = (LinearLayout) findViewById(R.id.anchorsContainer);
+		addAnchorEditText("0");
+		addAnchorEditText("0.5");
+		addAnchorEditText("1");
 	}
 
 	private void setNbChildLogic() {
@@ -107,9 +114,12 @@ public class StackLayoutDemo extends Activity{
 		int indexInStack = stackLayout.getChildCount();
 		String anchors;
 		if(indexInStack<2){
-			anchors =  "1.;1.";
+			anchors =  "0.5;1.";
 		}else{
-			anchors =  "0.;0.5;1.";
+			anchors = getAnchors();
+			if(anchors.length()==0){
+				anchors = "0.;0.5;1.";
+			}
 		}
 		stackLayout.addView(buildSimpleList(indexInStack), indexInStack, stackLayout.generateLayoutParams(false, true, anchors, 1));
 	}
@@ -162,5 +172,28 @@ public class StackLayoutDemo extends Activity{
 
 	private void removePanelToStackLayout() {
 		stackLayout.removeViewAt(stackLayout.getChildCount()-1);
+	}
+	
+	
+	private void addAnchorEditText(String anchorContent){
+		EditText anchorEditText = (EditText)getLayoutInflater().inflate(R.layout.anchor, anchorsContainer, false);
+		if(anchorContent!=null && anchorContent.length()!=0){
+			anchorEditText.setText(anchorContent);
+		}
+		anchorsContainer.addView(anchorEditText);
+	}
+	
+
+	private String getAnchors() {
+		StringBuffer result = new StringBuffer();
+		int nbAnchors = anchorsContainer.getChildCount();
+		for (int i=0; i<nbAnchors; i++) {
+			EditText anchor = (EditText) anchorsContainer.getChildAt(i);
+			Editable text = anchor.getText();
+			if(text.length()!=0){
+				result.append(text).append(';');
+			}
+		}
+		return result.toString();
 	}
 }
