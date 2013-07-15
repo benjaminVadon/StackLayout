@@ -180,9 +180,15 @@ public class StackLayoutDemo extends Activity{
 		if(anchorContent!=null && anchorContent.length()!=0){
 			anchorEditText.setText(anchorContent);
 		}
+		anchorEditText.setId(getUnusedId());
 		anchorsContainer.addView(anchorEditText);
 	}
-	
+
+	int fID = 0;
+	private int getUnusedId() {
+		 while( findViewById(++fID) != null );
+		    return fID;
+	}
 
 	private String getAnchors() {
 		StringBuffer result = new StringBuffer();
