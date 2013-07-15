@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -36,6 +37,28 @@ public class StackLayoutDemo extends Activity{
 	private ListAdapter listAdapter;
 	protected int maxNbChild;
 	private LinearLayout anchorsContainer;
+	private TextWatcher anchorsWatcher = new TextWatcher() {
+		@Override
+		public void onTextChanged(CharSequence s, int start, int before, int count) {
+		}
+		@Override
+		public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+		}
+		@Override
+		public void afterTextChanged(Editable s) {
+		
+			int nbEditText = anchorsContainer.getChildCount();
+			if(nbEditText>2){
+				int lastAnchorTextLength = ((EditText)anchorsContainer.getChildAt(nbEditText-1)).getText().length();
+				int beforeLastAnchorTextLength = ((EditText)anchorsContainer.getChildAt(nbEditText-2)).getText().length();
+				if(lastAnchorTextLength==0 && beforeLastAnchorTextLength==0){
+					removeLastAnchorEditText();
+				}else if(beforeLastAnchorTextLength!=0 && lastAnchorTextLength!=0){
+					addAnchorEditText("");
+				}
+			}
+		}
+	};
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -111,16 +134,16 @@ public class StackLayoutDemo extends Activity{
 
 
 	private void addPanelToStackLayout() {
-		int indexInStack = stackLayout.getChildCount();
 		String anchors;
-		if(indexInStack<2){
-			anchors =  "0.5;1.";
-		}else{
+//		if(indexInStack<2){
+//			anchors =  "0.5;1.";
+//		}else{
 			anchors = getAnchors();
 			if(anchors.length()==0){
-				anchors = "0.;0.5;1.";
-			}
+				anchors = "0.";
+//			}
 		}
+		int indexInStack = stackLayout.getChildCount();
 		stackLayout.addView(buildSimpleList(indexInStack), indexInStack, stackLayout.generateLayoutParams(false, true, anchors, 1));
 	}
 
@@ -182,6 +205,10 @@ public class StackLayoutDemo extends Activity{
 		}
 		anchorEditText.setId(getUnusedId());
 		anchorsContainer.addView(anchorEditText);
+		anchorEditText.addTextChangedListener(anchorsWatcher);
+	}
+	private void removeLastAnchorEditText(){
+		anchorsContainer.removeViewAt(anchorsContainer.getChildCount()-1);
 	}
 
 	int fID = 0;
