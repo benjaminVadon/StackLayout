@@ -29,6 +29,7 @@ public class StackLayoutDemo extends Activity{
 
 	private static final int NB_IN_LIST = 100;
 	private static final String DEFAULT_MAX_CHILD = "5";
+	protected static final int MIN_ANCHOR_EDITTEXT = 2;
 	protected final String LOG_TAG = getClass().getSimpleName();
 	private StackLayout stackLayout;
 	private final int nbBasePanel = 1;
@@ -48,10 +49,10 @@ public class StackLayoutDemo extends Activity{
 		public void afterTextChanged(Editable s) {
 		
 			int nbEditText = anchorsContainer.getChildCount();
-			if(nbEditText>2){
+			if(nbEditText>=MIN_ANCHOR_EDITTEXT){
 				int lastAnchorTextLength = ((EditText)anchorsContainer.getChildAt(nbEditText-1)).getText().length();
 				int beforeLastAnchorTextLength = ((EditText)anchorsContainer.getChildAt(nbEditText-2)).getText().length();
-				if(lastAnchorTextLength==0 && beforeLastAnchorTextLength==0){
+				if(lastAnchorTextLength==0 && beforeLastAnchorTextLength==0 && nbEditText>MIN_ANCHOR_EDITTEXT){
 					removeLastAnchorEditText();
 				}else if(beforeLastAnchorTextLength!=0 && lastAnchorTextLength!=0){
 					addAnchorEditText("");
@@ -76,9 +77,10 @@ public class StackLayoutDemo extends Activity{
 		
 		setMaxChildLogic();
 		anchorsContainer = (LinearLayout) findViewById(R.id.anchorsContainer);
-		addAnchorEditText("0");
+		addAnchorEditText("0.2");
 		addAnchorEditText("0.5");
 		addAnchorEditText("1");
+		addAnchorEditText("");
 	}
 
 	private void setNbChildLogic() {
