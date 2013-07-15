@@ -13,12 +13,12 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.ToggleButton;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
@@ -30,6 +30,7 @@ public class StackLayoutDemo extends Activity{
 	private static final int NB_IN_LIST = 100;
 	private static final String DEFAULT_MAX_CHILD = "5";
 	protected static final int MIN_ANCHOR_EDITTEXT = 2;
+	private static final String DEFAULT_ANCHORS =  "0.";
 	protected final String LOG_TAG = getClass().getSimpleName();
 	private StackLayout stackLayout;
 	private final int nbBasePanel = 1;
@@ -37,7 +38,11 @@ public class StackLayoutDemo extends Activity{
 	private SeekBar nbChild;
 	private ListAdapter listAdapter;
 	protected int maxNbChild;
+	private CheckBox isListItemClickable;
 	private LinearLayout anchorsContainer;
+	private CheckBox isFixedCheckBox;
+	private CheckBox bestWidthFromParent;
+	
 	private TextWatcher anchorsWatcher = new TextWatcher() {
 		@Override
 		public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -70,6 +75,9 @@ public class StackLayoutDemo extends Activity{
 	}
 
 	private void initFirstPanel() {
+
+		isListItemClickable = (CheckBox)findViewById(R.id.isListItemClickable);
+		
 		setNbChildLogic();
 		
 		nbChildInfo = (TextView) findViewById(R.id.nbChildInfo);
@@ -77,10 +85,12 @@ public class StackLayoutDemo extends Activity{
 		
 		setMaxChildLogic();
 		anchorsContainer = (LinearLayout) findViewById(R.id.anchorsContainer);
-		addAnchorEditText("0.2");
+		addAnchorEditText("0.25");
 		addAnchorEditText("0.5");
 		addAnchorEditText("1");
 		addAnchorEditText("");
+		isFixedCheckBox = (CheckBox) findViewById(R.id.isFixed);
+		bestWidthFromParent = (CheckBox) findViewById(R.id.bestWidthFromParent);
 	}
 
 	private void setNbChildLogic() {
@@ -136,19 +146,37 @@ public class StackLayoutDemo extends Activity{
 
 
 	private void addPanelToStackLayout() {
-		String anchors;
-//		if(indexInStack<2){
-//			anchors =  "0.5;1.";
-//		}else{
-			anchors = getAnchors();
-			if(anchors.length()==0){
-				anchors = "0.";
-//			}
-		}
+		String anchors = getAnchors(DEFAULT_ANCHORS);
+		boolean isFixed = getIsFixed();
+		boolean bestWidthFromParent = getBestWidthFromParent();
 		int indexInStack = stackLayout.getChildCount();
-		stackLayout.addView(buildSimpleList(indexInStack), indexInStack, stackLayout.generateLayoutParams(false, true, anchors, 1));
+		stackLayout.addView(buildSimpleList(indexInStack), indexInStack, stackLayout.generateLayoutParams(isFixed, bestWidthFromParent, anchors, 1));
 	}
 
+	private String getAnchors(String defaultAnchors) {
+		StringBuffer result = new StringBuffer();
+		int nbAnchors = anchorsContainer.getChildCount();
+		for (int i=0; i<nbAnchors; i++) {
+			EditText anchor = (EditText) anchorsContainer.getChildAt(i);
+			Editable text = anchor.getText();
+			if(text.length()!=0){
+				result.append(text).append(';');
+			}
+		}
+		if(result.length()==0){
+			result.append(defaultAnchors);
+		}
+		return result.toString();
+	}
+
+	private boolean getIsFixed() {
+		return isFixedCheckBox.isChecked();
+	}
+
+	private boolean getBestWidthFromParent() {
+		return bestWidthFromParent.isChecked();
+	}
+	
 	private View buildSimpleList(final int indexInStack) {
 		ListView list = new ListView(getApplicationContext());
 		int nbPanel = stackLayout.getChildCount()-1;
@@ -183,7 +211,6 @@ public class StackLayoutDemo extends Activity{
 
 
 	protected boolean isListItemClickable() {
-		ToggleButton isListItemClickable = (ToggleButton)findViewById(R.id.isListItemClickable);
 		return isListItemClickable.isChecked();
 	}
 
@@ -209,6 +236,7 @@ public class StackLayoutDemo extends Activity{
 		anchorsContainer.addView(anchorEditText);
 		anchorEditText.addTextChangedListener(anchorsWatcher);
 	}
+	
 	private void removeLastAnchorEditText(){
 		anchorsContainer.removeViewAt(anchorsContainer.getChildCount()-1);
 	}
@@ -217,18 +245,5 @@ public class StackLayoutDemo extends Activity{
 	private int getUnusedId() {
 		 while( findViewById(++fID) != null );
 		    return fID;
-	}
-
-	private String getAnchors() {
-		StringBuffer result = new StringBuffer();
-		int nbAnchors = anchorsContainer.getChildCount();
-		for (int i=0; i<nbAnchors; i++) {
-			EditText anchor = (EditText) anchorsContainer.getChildAt(i);
-			Editable text = anchor.getText();
-			if(text.length()!=0){
-				result.append(text).append(';');
-			}
-		}
-		return result.toString();
 	}
 }

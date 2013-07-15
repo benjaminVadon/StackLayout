@@ -8,5 +8,7 @@
 	<string name="configurator_isListItemClickable">Rows add panel on click</string>
 	<string name="configurator_title_panelControl">Panel build controls</string>
 	<string name="configurator_anchors">Anchors</string>
+	<string name="configurator_isFixed">Panel is fixed</string>
+	<string name="configurator_bestWidthFromParent">Best width set by parent</string>
 
 </resources>

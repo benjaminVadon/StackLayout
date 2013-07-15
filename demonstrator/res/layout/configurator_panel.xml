@@ -1,107 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:mobilisens="http://schemas.android.com/apk/res-auto"
 	android:layout_width="wrap_content"
 	android:layout_height="match_parent"
-	android:background="@android:color/background_light"
-	android:orientation="vertical"
-	android:padding="10dp"
+	android:fillViewport="true"
 	mobilisens:fixed="true">
 
 	<LinearLayout
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_margin="3dp"
-		android:background="@color/configurator_section_background"
+		android:background="@android:color/background_light"
 		android:orientation="vertical"
-		android:padding="3dp">
-
-		<TextView
-			style="@style/configurator_sections_title"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="@string/configurator_title"/>
+		android:padding="10dp">
 
 		<LinearLayout
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:baselineAligned="false"
-			android:orientation="vertical">
+			android:layout_margin="3dp"
+			android:background="@color/configurator_section_background"
+			android:orientation="vertical"
+			android:padding="3dp">
 
 			<TextView
-				android:id="@+id/nbChildInfo"
+				style="@style/configurator_sections_title"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:text="@string/configurator_nbChild"/>
+				android:text="@string/configurator_title"/>
 
 			<LinearLayout
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:focusableInTouchMode="true"
-				android:orientation="horizontal">
-
-				<SeekBar
-					android:id="@+id/nbChild"
-					android:layout_width="150dp"
-					android:layout_height="wrap_content"/>
+				android:baselineAligned="false"
+				android:orientation="vertical">
 
 				<TextView
+					android:id="@+id/nbChildInfo"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:text="@string/configurator_maxChild"/>
+					android:text="@string/configurator_nbChild"/>
 
-				<EditText
-					android:id="@+id/maxChild"
+				<LinearLayout
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:inputType="numberSigned"
-					android:maxLength="2"/>
+					android:focusableInTouchMode="true"
+					android:orientation="horizontal">
+
+					<SeekBar
+						android:id="@+id/nbChild"
+						android:layout_width="150dp"
+						android:layout_height="wrap_content"/>
+
+					<TextView
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="@string/configurator_maxChild"/>
+
+					<EditText
+						android:id="@+id/maxChild"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:inputType="numberSigned"
+						android:maxLength="2"/>
+				</LinearLayout>
 			</LinearLayout>
+
+			<CheckBox
+				android:id="@+id/isListItemClickable"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:checked="true"
+				android:text="@string/configurator_isListItemClickable"/>
 		</LinearLayout>
 
 		<LinearLayout
-			android:layout_width="wrap_content"
+			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:orientation="horizontal">
+			android:layout_margin="3dp"
+			android:background="@color/configurator_section_background"
+			android:orientation="vertical"
+			android:padding="3dp">
+
+			<TextView
+				style="@style/configurator_sections_title"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/configurator_title_panelControl"/>
 
 			<TextView
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:text="@string/configurator_isListItemClickable"/>
+				android:text="@string/configurator_anchors"/>
 
-			<ToggleButton
-				android:id="@+id/isListItemClickable"
+			<LinearLayout
+				android:id="@+id/anchorsContainer"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:checked="true"/>
+				android:orientation="horizontal">
+			</LinearLayout>
+
+			<CheckBox
+				android:id="@+id/isFixed"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:checked="false"
+				android:text="@string/configurator_isFixed"/>
+
+			<CheckBox
+				android:id="@+id/bestWidthFromParent"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:checked="true"
+				android:text="@string/configurator_bestWidthFromParent"/>
 		</LinearLayout>
 	</LinearLayout>
 
-	<LinearLayout
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:layout_margin="3dp"
-		android:background="@color/configurator_section_background"
-		android:orientation="vertical"
-		android:padding="3dp">
-
-		<TextView
-			style="@style/configurator_sections_title"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="@string/configurator_title_panelControl"/>
-
-		<TextView
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="@string/configurator_anchors"/>
-
-		<LinearLayout
-			android:id="@+id/anchorsContainer"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:orientation="horizontal">
-		</LinearLayout>
-	</LinearLayout>
-
-</LinearLayout>
+</ScrollView>
